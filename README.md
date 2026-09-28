@@ -1,47 +1,44 @@
 # KennaDent
 
-Sitio web de la clínica dental **KennaDent**: una página estática (HTML, CSS y JavaScript, sin dependencias ni paso de compilación).
+Sistema de gestión para clínicas dentales con varias sucursales: agenda, pacientes con historial clínico, presupuestos, personal con permisos y estadísticas.
+
+> **Estado: prototipo navegable de la Fase 1.** Usa datos de ejemplo guardados en el navegador. Sirve para validar pantallas y flujos antes de construir la versión con base de datos real.
+
+Requisitos completos, fases y pendientes por definir: [`docs/requisitos.md`](docs/requisitos.md)
+
+## Secciones
+
+| Sección | Qué incluye |
+|---|---|
+| **Inicio** | Citas del día, ventas del mes, tratamientos más vendidos y pacientes con mayor presupuesto pendiente |
+| **Agenda** | Vista por día con columnas por doctor; alta de citas, estados y aviso de empalmes |
+| **Pacientes** | Expedientes compartidos entre sucursales, alta/baja, historial clínico, plan de tratamiento y registro de consultas |
+| **Presupuestos** | Pacientes ordenados por monto de tratamientos pendientes, con contacto por WhatsApp |
+| **Estadísticas** | Ranking de tratamientos, doctores, sucursales y áreas |
+| **Personal** | Alta y baja de trabajadores por puesto, sucursales y permisos por casilla |
+| **Empresa** | Datos fiscales, sucursales, catálogo de tratamientos y precios, tipos de cita |
+
+Tiene modo día/noche (botón de luna o sol) y se adapta a celular, tablet y computadora.
+
+## Cómo probarlo
+
+- **En línea:** https://navaleitor.github.io/KennaDent/ (con GitHub Pages activado sobre `main`)
+- **En tu computadora:** descarga el repositorio y abre `index.html` con doble clic.
+
+Para ver el sistema como otro trabajador (recepcionista, pasante, doctor…), haz clic en tu nombre arriba a la derecha y elige a otra persona. Desde ahí también puedes **restablecer los datos de ejemplo**.
 
 ## Estructura
 
 ```
-KennaDent/
-├── index.html        Página principal (todas las secciones)
-├── css/styles.css    Estilos y diseño responsive
-├── js/main.js        Menú móvil, animaciones y formulario de citas por WhatsApp
-└── assets/
-    └── favicon.svg   Logotipo / ícono
+index.html            Estructura de la aplicación
+css/app.css           Estilos, modo día/noche y diseño responsive
+js/roles.js           Puestos y permisos
+js/data.js            Datos de ejemplo y almacenamiento en el navegador
+js/metricas.js        Cálculo de rankings y estadísticas
+js/ui.js              Componentes: ventanas, avisos, íconos
+js/app.js             Menú, barra superior y navegación
+js/views/*.js         Una pantalla por archivo
+docs/requisitos.md    Requisitos, fases y pendientes
 ```
 
-## Secciones
-
-1. **Inicio**: mensaje principal y llamada a agendar cita
-2. **Servicios**: limpieza, estética, ortodoncia, implantes, endodoncia y odontopediatría
-3. **Nosotros**: cifras y valores de la clínica
-4. **¿Cómo funciona?**: la primera visita en 3 pasos
-5. **Testimonios**
-6. **Preguntas frecuentes**
-7. **Contacto**: datos y formulario que abre WhatsApp con el mensaje ya escrito
-
-## Verla localmente
-
-Abre `index.html` en el navegador, o levanta un servidor local:
-
-```bash
-python3 -m http.server 8000
-# luego visita http://localhost:8000
-```
-
-## Pendiente: datos reales
-
-El contexto del proyecto no traía datos de la clínica, así que estos elementos son **provisionales** y hay que cambiarlos:
-
-- Dirección, teléfono, correo y horario: sección `#contacto` de `index.html`
-- Número de WhatsApp: constante `WHATSAPP_NUMBER` en `js/main.js` y los enlaces `wa.me` en `index.html`
-- Testimonios: son textos de ejemplo
-- Cifras de la sección "Nosotros" (años, pacientes, especialistas)
-- Lista de servicios, si la clínica ofrece otros
-
-## Publicación
-
-Al ser un sitio estático se puede publicar gratis con **GitHub Pages**: en *Settings → Pages*, elige la rama `main` y la carpeta raíz. También funciona en Netlify o Vercel sin configuración adicional.
+Los nombres, teléfonos, precios y cifras son de ejemplo.

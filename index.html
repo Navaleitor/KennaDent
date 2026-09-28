@@ -3,265 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>KennaDent | Clínica Dental</title>
-  <meta name="description" content="KennaDent: clínica dental con atención cercana, tecnología moderna y tratamientos para toda la familia.">
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <title>KennaDent · Gestión dental</title>
+  <meta name="description" content="KennaDent: sistema de gestión para clínicas dentales con múltiples sucursales.">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    try { var t = localStorage.getItem("kennadent-tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
 </head>
 <body>
-  <header class="header" id="inicio">
-    <nav class="nav container">
-      <a href="#inicio" class="logo" aria-label="KennaDent inicio">
-        <img src="assets/favicon.svg" alt="" width="36" height="36">
-        <span>Kenna<strong>Dent</strong></span>
-      </a>
-      <button class="nav-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu">
-        <span></span><span></span><span></span>
-      </button>
-      <ul class="nav-links" id="menu">
-        <li><a href="#servicios">Servicios</a></li>
-        <li><a href="#nosotros">Nosotros</a></li>
-        <li><a href="#proceso">¿Cómo funciona?</a></li>
-        <li><a href="#testimonios">Testimonios</a></li>
-        <li><a href="#faq">Preguntas</a></li>
-        <li><a href="#contacto" class="btn btn-small">Agendar cita</a></li>
-      </ul>
-    </nav>
-  </header>
-
-  <main>
-    <!-- HERO -->
-    <section class="hero">
-      <div class="container hero-grid">
-        <div class="hero-text">
-          <p class="eyebrow">Clínica dental</p>
-          <h1>Sonrisas sanas, <span class="accent">atención cercana</span></h1>
-          <p class="lead">En KennaDent cuidamos la salud bucal de toda tu familia con tratamientos modernos, explicaciones claras y un trato humano en cada visita.</p>
-          <div class="hero-actions">
-            <a href="#contacto" class="btn">Agenda tu cita</a>
-            <a href="#servicios" class="btn btn-outline">Ver servicios</a>
-          </div>
-          <ul class="hero-points">
-            <li>Diagnóstico claro y sin sorpresas</li>
-            <li>Atención para niños y adultos</li>
-            <li>Planes de tratamiento a tu medida</li>
-          </ul>
-        </div>
-        <div class="hero-visual" aria-hidden="true">
-          <div class="blob"></div>
-          <svg class="tooth" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
-            <path d="M100 30c-18-14-52-22-70 2-20 27-8 70 4 96 9 20 10 52 22 72 10 16 24 10 28-8 5-22 6-44 16-44s11 22 16 44c4 18 18 24 28 8 12-20 13-52 22-72 12-26 24-69 4-96-18-24-52-16-70-2z" fill="#fff" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>
-            <path d="M60 62c8-10 22-12 32-6" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" opacity=".35"/>
-          </svg>
-          <div class="float-card card-1"><strong>+10</strong><span>especialidades</span></div>
-          <div class="float-card card-2"><strong>★ 4.9</strong><span>satisfacción</span></div>
-        </div>
+  <aside class="sidebar" aria-label="Menú principal">
+    <div class="marca">
+      <img src="assets/logo.svg" alt="" width="30" height="30">
+      <div>
+        <strong>KennaDent</strong>
+        <small id="empresa-nombre"></small>
       </div>
-    </section>
-
-    <!-- SERVICIOS -->
-    <section class="section" id="servicios">
-      <div class="container">
-        <div class="section-head">
-          <p class="eyebrow">Servicios</p>
-          <h2>Todo lo que tu sonrisa necesita</h2>
-          <p>Desde la limpieza preventiva hasta la rehabilitación completa, en un solo lugar.</p>
-        </div>
-        <div class="cards">
-          <article class="card">
-            <div class="icon">🪥</div>
-            <h3>Limpieza y prevención</h3>
-            <p>Profilaxis, revisiones periódicas y aplicación de flúor para evitar problemas antes de que aparezcan.</p>
-          </article>
-          <article class="card">
-            <div class="icon">✨</div>
-            <h3>Estética dental</h3>
-            <p>Blanqueamiento, carillas y resinas estéticas para una sonrisa natural y luminosa.</p>
-          </article>
-          <article class="card">
-            <div class="icon">😁</div>
-            <h3>Ortodoncia</h3>
-            <p>Brackets y alineadores transparentes para corregir la posición de tus dientes.</p>
-          </article>
-          <article class="card">
-            <div class="icon">🦷</div>
-            <h3>Implantes</h3>
-            <p>Reemplazo de piezas perdidas con implantes que se ven y funcionan como dientes naturales.</p>
-          </article>
-          <article class="card">
-            <div class="icon">🩺</div>
-            <h3>Endodoncia</h3>
-            <p>Tratamientos de conducto para salvar dientes dañados y eliminar el dolor.</p>
-          </article>
-          <article class="card">
-            <div class="icon">🧸</div>
-            <h3>Odontopediatría</h3>
-            <p>Atención amable y paciente para que los más pequeños disfruten ir al dentista.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- NOSOTROS -->
-    <section class="section section-alt" id="nosotros">
-      <div class="container split">
-        <div class="stats">
-          <div class="stat"><strong data-count="10">0</strong><span>años de experiencia</span></div>
-          <div class="stat"><strong data-count="5000">0</strong><span>pacientes atendidos</span></div>
-          <div class="stat"><strong data-count="6">0</strong><span>especialistas</span></div>
-          <div class="stat"><strong data-count="98">0</strong><span>% recomendarían</span></div>
-        </div>
-        <div>
-          <p class="eyebrow">Nosotros</p>
-          <h2>Una clínica pensada para que te sientas en casa</h2>
-          <p>KennaDent nace con una idea sencilla: que visitar al dentista sea una experiencia tranquila. Te explicamos cada paso, resolvemos tus dudas y diseñamos contigo el tratamiento que mejor se adapta a tus necesidades y presupuesto.</p>
-          <ul class="checks">
-            <li>Equipo con especialistas en distintas áreas</li>
-            <li>Instrumental esterilizado y protocolos de bioseguridad</li>
-            <li>Tecnología digital para diagnósticos precisos</li>
-            <li>Opciones de pago flexibles</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- PROCESO -->
-    <section class="section" id="proceso">
-      <div class="container">
-        <div class="section-head">
-          <p class="eyebrow">¿Cómo funciona?</p>
-          <h2>Tu primera visita en 3 pasos</h2>
-        </div>
-        <ol class="steps">
-          <li>
-            <span class="step-num">1</span>
-            <h3>Agenda</h3>
-            <p>Escríbenos por WhatsApp, llámanos o llena el formulario y elige el horario que te acomode.</p>
-          </li>
-          <li>
-            <span class="step-num">2</span>
-            <h3>Valoración</h3>
-            <p>Revisamos tu salud bucal y te explicamos con claridad lo que encontramos.</p>
-          </li>
-          <li>
-            <span class="step-num">3</span>
-            <h3>Tratamiento</h3>
-            <p>Recibes un plan con tiempos y costos definidos antes de empezar.</p>
-          </li>
-        </ol>
-      </div>
-    </section>
-
-    <!-- TESTIMONIOS -->
-    <section class="section section-alt" id="testimonios">
-      <div class="container">
-        <div class="section-head">
-          <p class="eyebrow">Testimonios</p>
-          <h2>Lo que dicen nuestros pacientes</h2>
-          <p class="note">Textos de ejemplo: sustitúyelos por reseñas reales de pacientes.</p>
-        </div>
-        <div class="cards cards-3">
-          <blockquote class="quote">
-            <p>“Siempre tuve miedo al dentista, pero aquí me explicaron todo y no sentí nada. ¡Muy recomendados!”</p>
-            <footer>— Paciente de ejemplo</footer>
-          </blockquote>
-          <blockquote class="quote">
-            <p>“Llevé a mis hijos y salieron felices. Se nota la paciencia y el cariño del equipo.”</p>
-            <footer>— Paciente de ejemplo</footer>
-          </blockquote>
-          <blockquote class="quote">
-            <p>“Terminé mi ortodoncia con alineadores y el resultado superó mis expectativas.”</p>
-            <footer>— Paciente de ejemplo</footer>
-          </blockquote>
-        </div>
-      </div>
-    </section>
-
-    <!-- FAQ -->
-    <section class="section" id="faq">
-      <div class="container narrow">
-        <div class="section-head">
-          <p class="eyebrow">Preguntas frecuentes</p>
-          <h2>Resolvemos tus dudas</h2>
-        </div>
-        <details>
-          <summary>¿Cada cuánto debo ir al dentista?</summary>
-          <p>Recomendamos una revisión y limpieza cada 6 meses, aunque tu dentista puede sugerir otra frecuencia según tu caso.</p>
-        </details>
-        <details>
-          <summary>¿Atienden urgencias?</summary>
-          <p>Sí. Si tienes dolor o un accidente dental, contáctanos y buscaremos atenderte lo antes posible.</p>
-        </details>
-        <details>
-          <summary>¿Puedo pagar mi tratamiento en partes?</summary>
-          <p>Ofrecemos opciones de pago flexibles. Pregunta en tu valoración por las alternativas disponibles.</p>
-        </details>
-        <details>
-          <summary>¿A partir de qué edad pueden ir los niños?</summary>
-          <p>Lo ideal es la primera visita al aparecer el primer diente o antes del primer año de edad.</p>
-        </details>
-      </div>
-    </section>
-
-    <!-- CONTACTO -->
-    <section class="section section-contact" id="contacto">
-      <div class="container split">
-        <div>
-          <p class="eyebrow light">Contacto</p>
-          <h2>Agenda tu cita hoy</h2>
-          <p>Déjanos tus datos y te contactaremos para confirmar tu cita.</p>
-          <ul class="contact-list">
-            <li><span>📍</span> [Dirección de la clínica]</li>
-            <li><span>📞</span> <a href="tel:+520000000000">[Teléfono]</a></li>
-            <li><span>💬</span> <a href="https://wa.me/520000000000" target="_blank" rel="noopener">[WhatsApp]</a></li>
-            <li><span>✉️</span> <a href="mailto:contacto@kennadent.com">[Correo electrónico]</a></li>
-            <li><span>🕒</span> Lun–Vie 9:00–19:00 · Sáb 9:00–14:00</li>
-          </ul>
-        </div>
-        <form class="form" id="cita-form" novalidate>
-          <label>Nombre completo
-            <input type="text" name="nombre" required autocomplete="name">
-          </label>
-          <label>Teléfono
-            <input type="tel" name="telefono" required autocomplete="tel">
-          </label>
-          <label>Servicio de interés
-            <select name="servicio">
-              <option>Valoración general</option>
-              <option>Limpieza y prevención</option>
-              <option>Estética dental</option>
-              <option>Ortodoncia</option>
-              <option>Implantes</option>
-              <option>Endodoncia</option>
-              <option>Odontopediatría</option>
-              <option>Urgencia</option>
-            </select>
-          </label>
-          <label>Mensaje (opcional)
-            <textarea name="mensaje" rows="3"></textarea>
-          </label>
-          <button type="submit" class="btn btn-full">Enviar por WhatsApp</button>
-          <p class="form-status" role="status" aria-live="polite"></p>
-        </form>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="container footer-inner">
-      <a href="#inicio" class="logo">
-        <img src="assets/favicon.svg" alt="" width="28" height="28">
-        <span>Kenna<strong>Dent</strong></span>
-      </a>
-      <p>© <span id="year"></span> KennaDent. Todos los derechos reservados.</p>
     </div>
-  </footer>
+    <nav id="nav"></nav>
+    <p class="sidebar-pie">Prototipo · Fase 1</p>
+  </aside>
+  <div class="velo" id="velo"></div>
 
-  <a href="https://wa.me/520000000000" class="whatsapp-fab" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">💬</a>
+  <div class="principal">
+    <header class="barra">
+      <button class="btn-icon solo-movil" id="btn-menu" aria-label="Abrir menú">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div class="barra-acciones" id="barra-acciones"></div>
+    </header>
+    <main id="contenido" tabindex="-1"></main>
+  </div>
 
-  <script src="js/main.js"></script>
+  <script src="js/roles.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/metricas.js"></script>
+  <script src="js/views/panel.js"></script>
+  <script src="js/views/agenda.js"></script>
+  <script src="js/views/pacientes.js"></script>
+  <script src="js/views/expediente.js"></script>
+  <script src="js/views/presupuestos.js"></script>
+  <script src="js/views/estadisticas.js"></script>
+  <script src="js/views/personal.js"></script>
+  <script src="js/views/empresa.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
