@@ -17,6 +17,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
   - Cambio de usuario de demostración para probar permisos.
 - Diseño empresarial con modo día/noche, adaptable a celular, tablet y computadora.
 - `docs/requisitos.md` con requisitos, fases y pendientes por definir.
+- Plantillas de Issues para reportar bugs y proponer mejoras.
+- `CLAUDE.md` con el contexto del proyecto y la forma de trabajo, para las próximas sesiones.
 
 ### Eliminado
 - Página informativa para pacientes de la v0.1.0: el sistema es de uso interno.

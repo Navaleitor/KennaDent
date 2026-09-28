@@ -1,0 +1,55 @@
+name: 🐞 Reportar un bug
+description: Algo no funciona como debería.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Gracias por reportarlo. Entre más detalle, más rápido se arregla.
+  - type: dropdown
+    id: seccion
+    attributes:
+      label: Sección
+      options: [Inicio, Agenda, Pacientes / expediente, Presupuestos, Estadísticas, Personal, Empresa, Menú o barra superior, Otra]
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: ¿Qué hiciste?
+      description: Los pasos para que vuelva a pasar.
+      placeholder: |
+        1. Entré a Pacientes
+        2. Abrí un expediente
+        3. Di clic en "Registrar consulta"
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: ¿Qué esperabas y qué pasó en su lugar?
+    validations:
+      required: true
+  - type: textarea
+    id: capturas
+    attributes:
+      label: Capturas de pantalla
+      description: Arrástralas o pégalas aquí.
+  - type: dropdown
+    id: dispositivo
+    attributes:
+      label: Dispositivo
+      options: [Computadora, Celular, Tablet]
+    validations:
+      required: true
+  - type: input
+    id: usuario
+    attributes:
+      label: Usuario de demostración
+      description: Con quién estabas en sesión (arriba a la derecha).
+      placeholder: Ej. Kenia Navarro (Administradora)
+  - type: input
+    id: version
+    attributes:
+      label: Versión
+      description: Aparece abajo a la izquierda, en el menú lateral.
+      placeholder: Ej. v0.2.0
