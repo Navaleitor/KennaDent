@@ -42,3 +42,7 @@ docs/requisitos.md    Requisitos, fases y pendientes
 ```
 
 Los nombres, teléfonos, precios y cifras son de ejemplo.
+
+## Versiones
+
+Versión actual: **0.2.0**. Cada entrega llega como pull request, se anota en [`CHANGELOG.md`](CHANGELOG.md) y, al unirse a `main`, se marca con una etiqueta (`v0.2.0`, `v0.3.0`…).
