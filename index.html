@@ -8,7 +8,7 @@
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css">
   <script>
     try { var t = localStorage.getItem("kennadent-tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
@@ -17,20 +17,24 @@
 <body>
   <aside class="sidebar" aria-label="Menú principal">
     <div class="marca">
-      <img src="assets/logo.svg" alt="" width="30" height="30">
+      <span class="marca-logo"><img src="assets/logo.svg" alt="" width="22" height="22"></span>
       <div>
         <strong>KennaDent</strong>
         <small id="empresa-nombre"></small>
       </div>
     </div>
+    <div class="sucursal-card" id="sucursal-card"></div>
     <nav id="nav"></nav>
-    <p class="sidebar-pie">Prototipo · Fase 1 · v0.2.0</p>
+    <div class="sidebar-pie">
+      <span class="pie-ico">KD</span>
+      <div><strong>Prototipo · Fase 1</strong><small>Versión 0.3.0 · datos de ejemplo</small></div>
+    </div>
   </aside>
   <div class="velo" id="velo"></div>
 
   <div class="principal">
     <header class="barra">
-      <button class="btn-icon solo-movil" id="btn-menu" aria-label="Abrir menú">
+      <button class="btn-icon sin-borde solo-movil" id="btn-menu" aria-label="Abrir menú">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       </button>
       <div class="barra-acciones" id="barra-acciones"></div>
@@ -40,14 +44,19 @@
 
   <script src="js/roles.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/odonto.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/metricas.js"></script>
-  <script src="js/views/panel.js"></script>
+  <script src="js/views/dashboard.js"></script>
   <script src="js/views/agenda.js"></script>
   <script src="js/views/pacientes.js"></script>
   <script src="js/views/expediente.js"></script>
+  <script src="js/views/seguimiento.js"></script>
+  <script src="js/views/caja.js"></script>
   <script src="js/views/presupuestos.js"></script>
-  <script src="js/views/estadisticas.js"></script>
+  <script src="js/views/reportes.js"></script>
+  <script src="js/views/inventario.js"></script>
+  <script src="js/views/tratamientos.js"></script>
   <script src="js/views/personal.js"></script>
   <script src="js/views/empresa.js"></script>
   <script src="js/app.js"></script>

@@ -1,6 +1,6 @@
 # KennaDent
 
-Sistema de gestión para clínicas dentales con varias sucursales: agenda, pacientes con historial clínico, presupuestos, personal con permisos y estadísticas.
+Sistema de gestión para clínicas dentales con varias sucursales: agenda por unidad, pacientes con odontograma, presupuestos, caja, inventario, personal con permisos y reportes.
 
 > **Estado: prototipo navegable de la Fase 1.** Usa datos de ejemplo guardados en el navegador. Sirve para validar pantallas y flujos antes de construir la versión con base de datos real.
 
@@ -8,15 +8,27 @@ Requisitos completos, fases y pendientes por definir: [`docs/requisitos.md`](doc
 
 ## Secciones
 
+**Principal** (operación diaria)
+
 | Sección | Qué incluye |
 |---|---|
-| **Inicio** | Citas del día, ventas del mes, tratamientos más vendidos y pacientes con mayor presupuesto pendiente |
-| **Agenda** | Vista por día con columnas por doctor; alta de citas, estados y aviso de empalmes |
-| **Pacientes** | Expedientes compartidos entre sucursales, alta/baja, historial clínico, plan de tratamiento y registro de consultas |
-| **Presupuestos** | Pacientes ordenados por monto de tratamientos pendientes, con contacto por WhatsApp |
-| **Estadísticas** | Ranking de tratamientos, doctores, sucursales y áreas |
-| **Personal** | Alta y baja de trabajadores por puesto, sucursales y permisos por casilla |
-| **Empresa** | Datos fiscales, sucursales, catálogo de tratamientos y precios, tipos de cita |
+| **Dashboard** | Citas del día, ingresos, presupuestos pendientes, oportunidades, actividad de la semana y disponibilidad del equipo |
+| **Agenda** | Por unidad (sillón): vistas día, semana y mes; arrastrar para mover, estirar para cambiar duración; color por doctor y estado de cada cita |
+| **Pacientes** | Directorio compartido entre sucursales; ficha con resumen, resumen clínico, odontograma mexicano, presupuestos, pagos y citas |
+| **Seguimiento** | Presupuestos sin respuesta, pacientes sin próxima cita y tratamientos por continuar |
+| **Caja** | Cobro de pacientes atendidos, entradas y salidas, corte diario |
+| **Solicitar material** | Para el personal clínico: pedir material al almacén |
+
+**Gestión** (administración y gerencia)
+
+| Sección | Qué incluye |
+|---|---|
+| **Presupuestos** | Flujo de presupuestos, exportar, imprimir y eliminar |
+| **Reportes** | Semanal, mensual, trimestral y anual: ventas, pacientes, ticket promedio, proyección y estado de los tratamientos |
+| **Inventario** | Existencias, revisión de los miércoles con proyección de una semana y solicitudes del personal |
+| **Tratamientos** | Catálogo con precio, duración y material que consume |
+| **Personal** | Alta y baja, usuario y contraseña automáticos, color en la agenda y permisos |
+| **Empresa** | Datos fiscales, sucursales con sus unidades y tipos de cita |
 
 Tiene modo día/noche (botón de luna o sol) y se adapta a celular, tablet y computadora.
 
@@ -25,7 +37,7 @@ Tiene modo día/noche (botón de luna o sol) y se adapta a celular, tablet y com
 - **En línea:** https://navaleitor.github.io/KennaDent/ (con GitHub Pages activado sobre `main`)
 - **En tu computadora:** descarga el repositorio y abre `index.html` con doble clic.
 
-Para ver el sistema como otro trabajador (recepcionista, pasante, doctor…), haz clic en tu nombre arriba a la derecha y elige a otra persona. Desde ahí también puedes **restablecer los datos de ejemplo**.
+Para ver el sistema como otro trabajador (recepcionista, doctor, caja…), haz clic en tu nombre arriba a la derecha y elige a otra persona. Por ejemplo, **DRA. ANDREA GARZA LEAL** (doctora), **DANIELA FLORES ROJAS** (recepción) o **CARLOS MARTÍNEZ VEGA** (gerente). Desde ahí también puedes **restablecer los datos de ejemplo**.
 
 ## Estructura
 
@@ -33,9 +45,10 @@ Para ver el sistema como otro trabajador (recepcionista, pasante, doctor…), ha
 index.html            Estructura de la aplicación
 css/app.css           Estilos, modo día/noche y diseño responsive
 js/roles.js           Puestos y permisos
-js/data.js            Datos de ejemplo y almacenamiento en el navegador
-js/metricas.js        Cálculo de rankings y estadísticas
-js/ui.js              Componentes: ventanas, avisos, íconos
+js/data.js            Datos de ejemplo, almacenamiento en el navegador y reglas (caja, inventario, avisos)
+js/odonto.js          Odontograma mexicano: piezas, hallazgos y dibujo
+js/metricas.js        Reportes, rankings y centro de seguimiento
+js/ui.js              Componentes: ventanas, menús, avisos, íconos y gráficas
 js/app.js             Menú, barra superior y navegación
 js/views/*.js         Una pantalla por archivo
 docs/requisitos.md    Requisitos, fases y pendientes
@@ -45,7 +58,7 @@ Los nombres, teléfonos, precios y cifras son de ejemplo.
 
 ## Versiones
 
-Versión actual: **0.2.0**. Cada entrega llega como pull request, se anota en [`CHANGELOG.md`](CHANGELOG.md) y, al unirse a `main`, se marca con una etiqueta (`v0.2.0`, `v0.3.0`…).
+Versión actual: **0.3.0**. Cada entrega llega como pull request, se anota en [`CHANGELOG.md`](CHANGELOG.md) y, al unirse a `main`, se marca con una etiqueta (`v0.2.0`, `v0.3.0`…).
 
 ## Reportar bugs o proponer mejoras
 

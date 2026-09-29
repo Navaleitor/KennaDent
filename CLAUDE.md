@@ -7,15 +7,24 @@
 
 ## Estado actual
 - Prototipo navegable de la **Fase 1**: HTML, CSS y JavaScript sin dependencias ni compilación, publicado con GitHub Pages desde `main`.
-- Los datos son de ejemplo (`js/data.js`) y se guardan en `localStorage`. Si cambia la estructura de los datos, subir `STORAGE_KEY` para que se regeneren.
+- Los datos son de ejemplo (`js/data.js`) y se guardan en `localStorage` en formato por columnas (`empacar`/`desempacar`) para caber en ~2.5 MB (límite de Safari en iPad). Si cambia la estructura de los datos, subir `STORAGE_KEY` (hoy `kennadent-demo-v3`) y agregar la anterior a `LLAVES_VIEJAS`.
+- Los campos vacíos (`""`) no se guardan: al leer, tratarlos como opcionales (`KD.esc` ya acepta `undefined`).
 - Los scripts son clásicos (no módulos ES) para que funcione abriendo `index.html` con doble clic. Todo cuelga de `window.KD`.
 - Todo texto que venga de datos se escapa con `KD.esc()` antes de meterlo en `innerHTML`.
 - Producción futura recomendada: Next.js + Supabase (Row Level Security para separar empresas). Considerar LFPDPPP, NOM-004-SSA3-2012 y NOM-024-SSA3-2012 (datos de salud).
 
 ## Estructura
-- `js/roles.js`: puestos y permisos. `js/data.js`: datos y almacenamiento. `js/metricas.js`: estadísticas. `js/ui.js`: modales, avisos e íconos. `js/app.js`: menú, barra y rutas (`#/seccion`).
+- `js/roles.js`: puestos, permisos y paleta de colores del equipo. `js/data.js`: datos, almacenamiento y reglas (registro de consulta, caja, inventario, avisos). `js/odonto.js`: odontograma. `js/metricas.js`: reportes y seguimiento. `js/ui.js`: modales, menús, avisos, íconos y gráficas. `js/app.js`: menú (Principal/Gestión), barra y rutas (`#/seccion`).
 - `js/views/*.js`: una pantalla por archivo, registrada en `KD.vistas`.
 - `css/app.css`: tokens de color en `:root`, con modo noche por `prefers-color-scheme` y `[data-theme="dark"]`. Estilo sobrio y empresarial.
+
+## Reglas del negocio (acordadas con el usuario)
+- **Nombres en mayúsculas** (pacientes, personal, tratamientos): usar `KD.mayus()` al guardar. Personal clínico con `titulo` lleva "DR." / "DRA." según el sexo (`KD.nombrePersona`).
+- **Dinero** solo con el permiso `dinero` (`KD.verDinero()`): no mostrar precios, montos ni ingresos sin él.
+- La agenda es **por unidad** (sillón): nunca dos citas en la misma unidad a la vez (`choqueCita`). Sin `agenda_todas`, el usuario ve solo sus citas.
+- La consulta solo la registra el doctor de la cita, ese día (`KD.puedeRegistrar`). Recepción no toca datos clínicos (`clinico_editar`).
+- Odontograma: rojo = por tratar, azul = realizado. Lo realizado en una consulta pasa a azul (`KD.odontoRealizado`).
+- Inventario: la proyección es de una semana, de miércoles a martes (`KD.cicloInventario`).
 
 ## Forma de trabajo
 - **Cada entrega va en un pull request hacia `main`.** Nunca hacer push directo a `main` ni hacer merge sin que el usuario lo pida.
