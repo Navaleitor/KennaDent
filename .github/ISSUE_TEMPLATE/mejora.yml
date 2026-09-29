@@ -1,0 +1,21 @@
+name: 💡 Proponer una mejora
+description: Una idea, un cambio de diseño o algo que falta.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: ¿Qué te gustaría?
+      placeholder: Ej. que en el expediente se vea el odontograma.
+    validations:
+      required: true
+  - type: textarea
+    id: porque
+    attributes:
+      label: ¿Para qué serviría?
+      description: Qué problema resuelve o a quién le ayuda (recepción, doctores, dueño…).
+  - type: textarea
+    id: capturas
+    attributes:
+      label: Capturas o referencias
+      description: Opcional. Diseños de Manus, ejemplos de otros sistemas, dibujos…

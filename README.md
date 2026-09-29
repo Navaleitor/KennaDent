@@ -1,47 +1,65 @@
 # KennaDent
 
-Sitio web de la clínica dental **KennaDent**: una página estática (HTML, CSS y JavaScript, sin dependencias ni paso de compilación).
+Sistema de gestión para clínicas dentales con varias sucursales: agenda por unidad, pacientes con odontograma, presupuestos, caja, inventario, personal con permisos y reportes.
+
+> **Estado: prototipo navegable de la Fase 1.** Usa datos de ejemplo guardados en el navegador. Sirve para validar pantallas y flujos antes de construir la versión con base de datos real.
+
+Requisitos completos, fases y pendientes por definir: [`docs/requisitos.md`](docs/requisitos.md)
+
+## Secciones
+
+**Principal** (operación diaria)
+
+| Sección | Qué incluye |
+|---|---|
+| **Dashboard** | Citas del día, ingresos, presupuestos pendientes, oportunidades, actividad de la semana y disponibilidad del equipo |
+| **Agenda** | Por unidad (sillón): vistas día, semana y mes; arrastrar para mover, estirar para cambiar duración; color por doctor y estado de cada cita |
+| **Pacientes** | Directorio compartido entre sucursales; ficha con resumen, resumen clínico, odontograma mexicano, presupuestos, pagos y citas |
+| **Seguimiento** | Presupuestos sin respuesta, pacientes sin próxima cita y tratamientos por continuar |
+| **Caja** | Cobro de pacientes atendidos, entradas y salidas, corte diario |
+| **Solicitar material** | Para el personal clínico: pedir material al almacén |
+
+**Gestión** (administración y gerencia)
+
+| Sección | Qué incluye |
+|---|---|
+| **Presupuestos** | Flujo de presupuestos, exportar, imprimir y eliminar |
+| **Reportes** | Semanal, mensual, trimestral y anual: ventas, pacientes, ticket promedio, proyección y estado de los tratamientos |
+| **Inventario** | Existencias, revisión de los miércoles con proyección de una semana y solicitudes del personal |
+| **Tratamientos** | Catálogo con precio, duración y material que consume |
+| **Personal** | Alta y baja, usuario y contraseña automáticos, color en la agenda y permisos |
+| **Empresa** | Datos fiscales, sucursales con sus unidades y tipos de cita |
+
+Tiene modo día/noche (botón de luna o sol) y se adapta a celular, tablet y computadora.
+
+## Cómo probarlo
+
+- **En línea:** https://navaleitor.github.io/KennaDent/ (con GitHub Pages activado sobre `main`)
+- **En tu computadora:** descarga el repositorio y abre `index.html` con doble clic.
+
+Para ver el sistema como otro trabajador (recepcionista, doctor, caja…), haz clic en tu nombre arriba a la derecha y elige a otra persona. Por ejemplo, **DRA. ANDREA GARZA LEAL** (doctora), **DANIELA FLORES ROJAS** (recepción) o **CARLOS MARTÍNEZ VEGA** (gerente). Desde ahí también puedes **restablecer los datos de ejemplo**.
 
 ## Estructura
 
 ```
-KennaDent/
-├── index.html        Página principal (todas las secciones)
-├── css/styles.css    Estilos y diseño responsive
-├── js/main.js        Menú móvil, animaciones y formulario de citas por WhatsApp
-└── assets/
-    └── favicon.svg   Logotipo / ícono
+index.html            Estructura de la aplicación
+css/app.css           Estilos, modo día/noche y diseño responsive
+js/roles.js           Puestos y permisos
+js/data.js            Datos de ejemplo, almacenamiento en el navegador y reglas (caja, inventario, avisos)
+js/odonto.js          Odontograma mexicano: piezas, hallazgos y dibujo
+js/metricas.js        Reportes, rankings y centro de seguimiento
+js/ui.js              Componentes: ventanas, menús, avisos, íconos y gráficas
+js/app.js             Menú, barra superior y navegación
+js/views/*.js         Una pantalla por archivo
+docs/requisitos.md    Requisitos, fases y pendientes
 ```
 
-## Secciones
+Los nombres, teléfonos, precios y cifras son de ejemplo.
 
-1. **Inicio**: mensaje principal y llamada a agendar cita
-2. **Servicios**: limpieza, estética, ortodoncia, implantes, endodoncia y odontopediatría
-3. **Nosotros**: cifras y valores de la clínica
-4. **¿Cómo funciona?**: la primera visita en 3 pasos
-5. **Testimonios**
-6. **Preguntas frecuentes**
-7. **Contacto**: datos y formulario que abre WhatsApp con el mensaje ya escrito
+## Versiones
 
-## Verla localmente
+Versión actual: **0.3.0**. Cada entrega llega como pull request, se anota en [`CHANGELOG.md`](CHANGELOG.md) y, al unirse a `main`, se marca con una etiqueta (`v0.2.0`, `v0.3.0`…).
 
-Abre `index.html` en el navegador, o levanta un servidor local:
+## Reportar bugs o proponer mejoras
 
-```bash
-python3 -m http.server 8000
-# luego visita http://localhost:8000
-```
-
-## Pendiente: datos reales
-
-El contexto del proyecto no traía datos de la clínica, así que estos elementos son **provisionales** y hay que cambiarlos:
-
-- Dirección, teléfono, correo y horario: sección `#contacto` de `index.html`
-- Número de WhatsApp: constante `WHATSAPP_NUMBER` en `js/main.js` y los enlaces `wa.me` en `index.html`
-- Testimonios: son textos de ejemplo
-- Cifras de la sección "Nosotros" (años, pacientes, especialistas)
-- Lista de servicios, si la clínica ofrece otros
-
-## Publicación
-
-Al ser un sitio estático se puede publicar gratis con **GitHub Pages**: en *Settings → Pages*, elige la rama `main` y la carpeta raíz. También funciona en Netlify o Vercel sin configuración adicional.
+En la pestaña **Issues** del repositorio → **New issue** → elige "Reportar un bug" o "Proponer una mejora". Puedes arrastrar capturas directo al formulario.
