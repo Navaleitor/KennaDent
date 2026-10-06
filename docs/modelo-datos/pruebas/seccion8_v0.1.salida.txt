@@ -1,0 +1,83 @@
+SET search_path = kennadent, public;
+SET
+INSERT INTO empresa(razon_social) VALUES ('KennaDent SA');
+INSERT 0 1
+INSERT INTO sucursal(empresa_id,nombre) VALUES (1,'Centro'),(1,'Norte');
+INSERT 0 2
+INSERT INTO unidad(sucursal_id,nombre) VALUES (1,'Sillon 1');
+INSERT 0 1
+INSERT INTO trabajador(rol_id,nombre,usuario,password_hash)
+  VALUES (4,'Dra Andrea','andrea','x'),(3,'Recepcion','rec','x');
+INSERT 0 2
+INSERT INTO trabajador_sucursal VALUES (1,1,true),(1,2,false);
+INSERT 0 2
+INSERT INTO paciente(nombre,apellidos) VALUES ('Juan','Perez');
+INSERT 0 1
+INSERT INTO cita(paciente_id,trabajador_id,unidad_id,inicio,fin)
+VALUES (1,1,1,'2026-10-01 10:00-06','2026-10-01 11:00-06');
+INSERT 0 1
+INSERT INTO cita(paciente_id,trabajador_id,unidad_id,inicio,fin)
+VALUES (1,1,1,'2026-10-01 10:30-06','2026-10-01 11:30-06');
+psql:docs/modelo-datos/pruebas/seccion8_v0.1.sql:18: ERROR:  conflicting key value violates exclusion constraint "cita_sin_empalme_unidad"
+DETAIL:  Key (unidad_id, tstzrange(inicio, fin))=(1, ["2026-10-01 16:30:00+00","2026-10-01 17:30:00+00")) conflicts with existing key (unidad_id, tstzrange(inicio, fin))=(1, ["2026-10-01 16:00:00+00","2026-10-01 17:00:00+00")).
+INSERT INTO cita(paciente_id,trabajador_id,unidad_id,inicio,fin,estado)
+VALUES (1,1,1,'2026-10-01 10:30-06','2026-10-01 11:30-06','cancelada');
+INSERT 0 1
+INSERT INTO trabajador_sucursal VALUES (1,2,true);
+psql:docs/modelo-datos/pruebas/seccion8_v0.1.sql:25: ERROR:  duplicate key value violates unique constraint "trabajador_sucursal_pkey"
+DETAIL:  Key (trabajador_id, sucursal_id)=(1, 2) already exists.
+INSERT INTO tratamiento(nombre,precio_base) VALUES ('Limpieza',500);
+INSERT 0 1
+INSERT INTO precio_sucursal(tratamiento_id,sucursal_id,precio) VALUES (1,2,650);
+INSERT 0 1
+SELECT precio_vigente(1,1) AS centro, precio_vigente(1,2) AS norte;
+ centro | norte  
+--------+--------
+ 500.00 | 650.00
+(1 row)
+
+INSERT INTO presupuesto(paciente_id,sucursal_id,trabajador_id) VALUES (1,2,1);
+INSERT 0 1
+INSERT INTO presupuesto_detalle(presupuesto_id,tratamiento_id,precio_unitario)
+VALUES (1,1,precio_vigente(1,2));
+INSERT 0 1
+INSERT INTO cuota(presupuesto_id,numero,vence,monto)
+VALUES (1,1,'2026-11-01',325),(1,2,'2026-12-01',325);
+INSERT 0 2
+INSERT INTO pago(paciente_id,sucursal_id,monto,metodo,registrado_por)
+VALUES (1,2,325,'efectivo',2);
+INSERT 0 1
+INSERT INTO pago_aplicacion(pago_id,presupuesto_id,cuota_id,monto) VALUES (1,1,1,325);
+INSERT 0 1
+SELECT * FROM v_saldo_presupuesto;
+ presupuesto_id | paciente_id | total  | pagado | saldo  
+----------------+-------------+--------+--------+--------
+              1 |           1 | 650.00 | 325.00 | 325.00
+(1 row)
+
+INSERT INTO pago(paciente_id,sucursal_id,monto,metodo,concepto,registrado_por)
+VALUES (1,2,400,'tarjeta','Consulta suelta',2);
+INSERT 0 1
+INSERT INTO material(nombre,unidad_medida) VALUES ('Guantes','caja');
+INSERT 0 1
+INSERT INTO inventario_movimiento(sucursal_id,material_id,tipo,motivo,cantidad,registrado_por)
+VALUES (1,1,'entrada','compra',10,2),
+       (1,1,'salida','traslado',4,2),
+       (2,1,'entrada','traslado',4,2);
+INSERT 0 3
+SELECT * FROM v_existencia ORDER BY sucursal_id;
+ sucursal_id | material_id | existencia 
+-------------+-------------+------------
+           1 |           1 |      6.000
+           2 |           1 |      4.000
+(2 rows)
+
+INSERT INTO pago_aplicacion(pago_id,presupuesto_id,monto) VALUES (2,1,9999);
+INSERT 0 1
+INSERT INTO sucursal(empresa_id,nombre) VALUES (1,'Sur');
+INSERT 0 1
+INSERT INTO unidad(sucursal_id,nombre) VALUES (3,'Sillon A');
+INSERT 0 1
+INSERT INTO cita(paciente_id,trabajador_id,unidad_id,inicio,fin)
+VALUES (1,1,2,'2026-10-02 10:00-06','2026-10-02 11:00-06');
+INSERT 0 1
