@@ -457,7 +457,8 @@ td .sub { display: block; font-size: 12px; color: var(--muted); }
 /* ===== Agenda ===== */
 .ag-barra { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
 .ag-barra .acciones select { width: auto; min-width: 180px; }
-.unidades-chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.ag-filtros { margin-left: auto; justify-content: flex-end; }
+.unidades-chips { display: flex; gap: 6px; flex-wrap: wrap; flex-basis: 100%; }
 .unidades-chips button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-2); border-radius: 10px; padding: 6px 12px; font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
 .unidades-chips button.activo { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
 .ag-nav { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 14px; }
@@ -484,6 +485,8 @@ td .sub { display: block; font-size: 12px; color: var(--muted); }
 .ag-col:last-child { border-right: 0; }
 .ag-col.hoy { background-color: color-mix(in srgb, var(--primary-soft) 45%, transparent); }
 .ag-col.fuera { background-color: var(--surface-2); }
+.ag-pasado { position: absolute; top: 0; left: 0; right: 0; pointer-events: none; z-index: 1;
+  background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--border) 55%, transparent) 6px 7px); }
 .ag-ahora { position: absolute; left: 0; right: 0; height: 2px; background: var(--bad); z-index: 3; pointer-events: none; }
 .ag-ahora::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--bad); }
 .ag-cita { --c: var(--primary); position: absolute; left: 4px; right: 4px; display: flex; border-radius: 11px; background: var(--surface); border: 1px solid var(--border-strong);
@@ -661,6 +664,8 @@ td .sub { display: block; font-size: 12px; color: var(--muted); }
   .tiles { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
+  .ag-filtros { width: 100%; flex-wrap: nowrap; }
+  .ag-barra .ag-filtros select { flex: 1; min-width: 0; }
   .barra { padding: 0 12px; gap: 4px; height: 60px; }
   #contenido { padding: 18px 16px; }
   .buscador kbd { display: none; }

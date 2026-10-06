@@ -6,6 +6,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 - El segundo número (**x**) sube con cada entrega grande; el tercero (**y**) con correcciones.
 - La **1.0.0** será la primera versión lista para usarse con clínicas reales.
 
+## [0.3.1] - 2026-10-06
+Correcciones de la Agenda de la revisión de la v0.3.0. Corrige los Issues #13 al #16.
+
+### Cambiado
+- **Barra de la agenda** (#13): la sucursal y el doctor quedan fijos a la derecha y los botones de las unidades pasan a su propio renglón, para que no se amontonen con 12 sillas.
+- **Horarios de :00 y :30** (#15): las citas solo empiezan en punto o a la media, al crearlas, al dar clic en un espacio libre y al arrastrarlas. Se controla con un solo valor (`AG_PASO`) por si se quiere regresar a cuartos de hora.
+- La lista de horas marca "ocupado" si la cita completa (con su duración) se encimaría con otra en esa unidad.
+- Las citas de ejemplo también empiezan a las :00 o :30. Los datos de demostración se vuelven a generar (se pierden los cambios hechos en la demo anterior).
+
+### Corregido
+- **No se agenda en el pasado** (#14): no se pueden crear ni mover citas a días u horas que ya pasaron. Los días pasados se siguen viendo con todas sus citas; la parte que ya pasó se ve rayada. Al editar una cita se respeta su horario original.
+- **Detalle de cita** (#16): al abrir y cerrar el detalle de una cita ya no cambia qué unidades se ven.
+
 ## [0.3.0] - 2026-09-29
 Rediseño con el estilo del prototipo de Kenia (Manus) y nuevas secciones. Corrige los Issues #3 al #11.
 

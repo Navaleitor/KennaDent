@@ -3,6 +3,7 @@
 KD.vistas = KD.vistas || {};
 
 const AG_INICIO = 8 * 60, AG_FIN = 20 * 60, AG_PX = 44 / 30; // 44 px por cada 30 minutos
+const AG_PASO = 30; // Las citas empiezan solo a las :00 y :30 (#15). Para volver a cuartos de hora, cambiar a 15.
 const DIAS_SEM = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const agEstado = { fecha: null, vista: "dia", unidades: [], doctor: "" };
 const ESTADOS_VIVOS = ["programada", "confirmada", "en_sala"];
@@ -49,16 +50,14 @@ KD.vistas.agenda = (main) => {
     ${KD.cabecera("Agenda por unidad", "Agenda", editar ? "Arrastra una cita para moverla · tira inferior para cambiar la duración · clic en un espacio libre para crear." : soloMias ? "Tu agenda personal." : "Agenda de la sucursal.",
       editar ? `<button class="btn" data-nueva>${KD.icon("mas", 16)} Nueva cita</button>` : "")}
     <div class="ag-barra">
-      <div class="acciones">
-        <div class="segmentado" role="group" aria-label="Vista">${[["dia", "Día"], ["semana", "Semana"], ["mes", "Mes"]].map(([k, t]) => `<button data-vista="${k}" class="${agEstado.vista === k ? "activo" : ""}">${t}</button>`).join("")}</div>
-        <div class="unidades-chips" role="group" aria-label="Unidades">
-          <button data-unidad="todas" class="${agEstado.unidades.length ? "" : "activo"}">${KD.icon("unidad", 15)} Todas</button>
-          ${unidades.map((un) => `<button data-unidad="${un}" class="${agEstado.unidades.includes(un) ? "activo" : ""}">Unidad ${un}</button>`).join("")}
-        </div>
-      </div>
-      <div class="acciones">
+      <div class="segmentado" role="group" aria-label="Vista">${[["dia", "Día"], ["semana", "Semana"], ["mes", "Mes"]].map(([k, t]) => `<button data-vista="${k}" class="${agEstado.vista === k ? "activo" : ""}">${t}</button>`).join("")}</div>
+      <div class="acciones ag-filtros">
         ${sucIds.length > 1 ? `<select data-suc aria-label="Sucursal de la agenda">${KD.opciones(KD.sucursalesUsuario().filter((s) => sucIds.includes(s.id)), sucId)}</select>` : ""}
         ${!soloMias ? `<select data-doctor aria-label="Doctor"><option value="">Todos los doctores</option>${KD.opciones(KD.doctores([sucId]).map((d) => ({ id: d.id, nombre: KD.nombrePersona(d) })), agEstado.doctor)}</select>` : ""}
+      </div>
+      <div class="unidades-chips" role="group" aria-label="Unidades">
+        <button data-unidad="todas" class="${agEstado.unidades.length ? "" : "activo"}">${KD.icon("unidad", 15)} Todas</button>
+        ${unidades.map((un) => `<button data-unidad="${un}" class="${agEstado.unidades.includes(un) ? "activo" : ""}">Unidad ${un}</button>`).join("")}
       </div>
     </div>
     <div class="card ag-nav">
@@ -75,7 +74,8 @@ KD.vistas.agenda = (main) => {
   // Controles
   const re = () => KD.vistas.agenda(main);
   main.querySelectorAll("[data-vista]").forEach((b) => b.addEventListener("click", () => { agEstado.vista = b.dataset.vista; re(); }));
-  main.querySelectorAll("[data-unidad]").forEach((b) => b.addEventListener("click", () => {
+  // Solo los botones de unidad: las columnas de la agenda también llevan data-unidad (#16)
+  main.querySelectorAll(".unidades-chips [data-unidad]").forEach((b) => b.addEventListener("click", () => {
     const v = b.dataset.unidad;
     if (v === "todas") agEstado.unidades = [];
     else {
@@ -109,7 +109,8 @@ KD.vistas.agenda = (main) => {
   // Crear cita con clic en un espacio libre
   if (editar) main.querySelectorAll(".ag-col").forEach((col) => col.addEventListener("click", (e) => {
     if (e.target !== col) return;
-    const min = Math.min(AG_FIN - 15, AG_INICIO + Math.floor(e.offsetY / AG_PX / 15) * 15);
+    const min = Math.min(AG_FIN - AG_PASO, AG_INICIO + Math.floor(e.offsetY / AG_PX / AG_PASO) * AG_PASO);
+    if (enPasado(col.dataset.fecha, KD.aHora(min))) { KD.toast("No se pueden agendar citas en días u horas que ya pasaron.", "bad"); return; }
     KD.formCita({ fecha: col.dataset.fecha, sucursalId: sucId, unidad: Number(col.dataset.unidad), hora: KD.aHora(min) });
   }));
   main.querySelectorAll(".ag-cita").forEach((el) => activarCita(el, editar, sucId));
@@ -119,6 +120,9 @@ KD.vistas.agenda = (main) => {
 };
 
 const unidadDe = (c, unidades) => Math.min(c.unidad || 1, unidades.length);
+
+// Una cita no se puede crear ni mover a un día u hora que ya pasó (#14)
+const enPasado = (fecha, hora) => fecha < KD.hoy() || (fecha === KD.hoy() && KD.aMinutos(hora) < KD.ahoraMin());
 
 // Reparte en carriles las citas que se enciman (vista semanal con varias unidades)
 function carriles(citas) {
@@ -152,8 +156,9 @@ function gridAgenda(columnas, compacta, editar) {
     ${columnas.map((col) => {
       const lanes = carriles(col.citas);
       const linea = col.fecha === KD.hoy() && ahora >= AG_INICIO && ahora <= AG_FIN ? `<div class="ag-ahora" style="top:${(ahora - AG_INICIO) * AG_PX}px"></div>` : "";
+      const pasado = col.fecha < KD.hoy() ? alto : col.fecha === KD.hoy() ? Math.max(0, Math.min(ahora, AG_FIN) - AG_INICIO) * AG_PX : 0;
       return `<div class="ag-col ${col.hoy ? "hoy" : ""} ${editar ? "" : "solo-lectura"}" data-fecha="${col.fecha}" data-unidad="${col.unidad}" style="height:${alto}px">
-        ${col.citas.map((c) => bloqueCita(c, compacta, editar, lanes.get(c.id))).join("")}${linea}</div>`;
+        ${pasado ? `<div class="ag-pasado" style="height:${pasado}px"></div>` : ""}${col.citas.map((c) => bloqueCita(c, compacta, editar, lanes.get(c.id))).join("")}${linea}</div>`;
     }).join("")}
   </div></div>`;
 }
@@ -193,7 +198,7 @@ function activarCita(el, editar, sucId) {
     const y0 = e.clientY, x0 = e.clientX;
     const ini0 = KD.aMinutos(c.hora), dur0 = c.duracion;
     let colDestino = el.parentElement, nuevoIni = ini0, nuevaDur = dur0, movido = false;
-    const snap = (m) => Math.round(m / 15) * 15;
+    const snap = (m, paso = 15) => Math.round(m / paso) * paso;
     const mover = (ev) => {
       const dy = ev.clientY - y0;
       if (!movido && Math.abs(dy) < 5 && Math.abs(ev.clientX - x0) < 5) return;
@@ -202,7 +207,7 @@ function activarCita(el, editar, sucId) {
         nuevaDur = Math.max(15, Math.min(AG_FIN - ini0, snap(dur0 + dy / AG_PX)));
         el.style.height = `${nuevaDur * AG_PX - 3}px`;
       } else {
-        nuevoIni = Math.max(AG_INICIO, Math.min(AG_FIN - dur0, snap(ini0 + dy / AG_PX)));
+        nuevoIni = Math.max(AG_INICIO, Math.min(AG_FIN - dur0, snap(ini0 + dy / AG_PX, AG_PASO)));
         el.style.top = `${(nuevoIni - AG_INICIO) * AG_PX + 1}px`;
         const bajo = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".ag-col");
         if (bajo && bajo !== colDestino) { colDestino = bajo; bajo.appendChild(el); }
@@ -215,6 +220,7 @@ function activarCita(el, editar, sucId) {
       window.removeEventListener("pointerup", soltar);
       if (!movido) { if (!redimensionar) KD.detalleCita(id); return; }
       const cambios = redimensionar ? { duracion: nuevaDur } : { hora: KD.aHora(nuevoIni), fecha: colDestino.dataset.fecha, unidad: Number(colDestino.dataset.unidad) };
+      if (!redimensionar && enPasado(cambios.fecha, cambios.hora)) { KD.toast("No se puede mover una cita a un día u hora que ya pasó.", "bad"); KD.render(); return; }
       const prueba = { ...c, ...cambios };
       const choque = choqueCita(prueba);
       if (choque) { KD.toast(choque, "bad"); KD.render(); return; }
@@ -342,6 +348,10 @@ KD.formCita = (datos) => {
   const d = { fecha: KD.hoy(), hora: "10:00", tipoId: "c1", duracion: 30, notas: "", tratamientoId: "", piezas: "", ...datos };
   d.sucursalId = d.sucursalId || KD.sucursalUnica();
   d.unidad = d.unidad || 1;
+  if (!existente && d.fecha < KD.hoy()) d.fecha = KD.hoy();
+  // Al editar, la fecha y hora originales se respetan aunque ya hayan pasado; solo no se puede mover al pasado
+  const original = existente ? { fecha: existente.fecha, hora: existente.hora } : null;
+  const minFecha = original && original.fecha < KD.hoy() ? original.fecha : KD.hoy();
   const pacientes = KD.db.pacientes.filter((p) => p.activo);
   const etiquetaPac = (p) => `${p.nombre} · ${p.expediente}`;
   const pacSel = d.pacienteId ? KD.byId("pacientes", d.pacienteId) : null;
@@ -361,7 +371,7 @@ KD.formCita = (datos) => {
       <label class="campo"><span>Doctor <em>*</em></span><select name="doctorId" required>${opcionesDoc(d.sucursalId, d.doctorId)}</select></label>
       ${sucs.length > 1 ? `<label class="campo"><span>Sucursal</span><select name="sucursalId">${KD.opciones(sucs, d.sucursalId)}</select></label>` : `<input type="hidden" name="sucursalId" value="${d.sucursalId}">`}
       <label class="campo"><span>Unidad (sillón) <em>*</em></span><select name="unidad">${KD.unidades(d.sucursalId).map((x) => `<option value="${x}" ${x === Number(d.unidad) ? "selected" : ""}>Unidad ${x}</option>`).join("")}</select></label>
-      <label class="campo"><span>Fecha <em>*</em></span><input type="date" name="fecha" value="${d.fecha}" required></label>
+      <label class="campo"><span>Fecha <em>*</em></span><input type="date" name="fecha" value="${d.fecha}" min="${minFecha}" required></label>
       <label class="campo"><span>Hora <em>*</em></span><select name="hora" required></select></label>
       <label class="campo"><span>Duración</span><select name="duracion">${duraciones.map((x) => `<option value="${x}" ${x === Number(d.duracion) ? "selected" : ""}>${x} minutos</option>`).join("")}</select></label>
       <label class="campo"><span>Tipo de cita</span><select name="tipoId">${KD.opciones(KD.db.tiposCita, d.tipoId)}</select></label>
@@ -376,15 +386,18 @@ KD.formCita = (datos) => {
   const f = m.querySelector("form");
   const pacActual = () => pacientes.find((p) => etiquetaPac(p) === f.paciente.value) || pacientes.find((p) => p.expediente === f.paciente.value.trim().toUpperCase());
 
+  // Horarios cada AG_PASO minutos, sin los que ya pasaron; "ocupado" si la cita completa se encimaría con otra en esa unidad
   const pintarHoras = () => {
-    const suc = f.sucursalId.value, un = Number(f.unidad.value), fe = f.fecha.value;
-    const ocupadas = new Set();
-    for (const x of KD.db.citas) {
-      if (x.id === existente?.id || x.fecha !== fe || x.sucursalId !== suc || (x.unidad || 1) !== un || ["cancelada", "no_asistio"].includes(x.estado)) continue;
-      for (let t = KD.aMinutos(x.hora); t < KD.finCita(x); t += 15) ocupadas.add(KD.aHora(t));
-    }
-    const sel = f.hora.value || d.hora;
-    f.hora.innerHTML = KD.opcionesHora(sel, AG_INICIO, AG_FIN, ocupadas);
+    const suc = f.sucursalId.value, un = Number(f.unidad.value), fe = f.fecha.value, dur = Number(f.duracion.value) || 30;
+    const enUnidad = KD.db.citas.filter((x) => x.id !== existente?.id && x.fecha === fe && x.sucursalId === suc && (x.unidad || 1) === un && !["cancelada", "no_asistio"].includes(x.estado));
+    const minutos = [];
+    for (let t = AG_INICIO; t < AG_FIN; t += AG_PASO) if (!enPasado(fe, KD.aHora(t))) minutos.push(t);
+    if (original && fe === original.fecha && !minutos.includes(KD.aMinutos(original.hora))) minutos.push(KD.aMinutos(original.hora));
+    minutos.sort((a, b) => a - b);
+    const ocupadas = new Set(minutos.filter((t) => enUnidad.some((x) => KD.aMinutos(x.hora) < t + dur && KD.finCita(x) > t)).map(KD.aHora));
+    const previo = f.hora.value || d.hora;
+    const sel = minutos.map(KD.aHora).includes(previo) ? previo : KD.aHora(minutos.find((t) => !ocupadas.has(KD.aHora(t))) ?? minutos[0] ?? 0);
+    f.hora.innerHTML = minutos.length ? KD.opcionesHora(sel, minutos, ocupadas) : `<option value="">Ya no hay horarios disponibles este día</option>`;
   };
   const pintarTratamientos = () => {
     const tipo = KD.byId("tiposCita", f.tipoId.value);
@@ -410,14 +423,15 @@ KD.formCita = (datos) => {
   });
   f.unidad.addEventListener("change", pintarHoras);
   f.fecha.addEventListener("change", pintarHoras);
+  f.duracion.addEventListener("change", pintarHoras);
   f.paciente.addEventListener("change", pintarTratamientos);
-  f.tipoId.addEventListener("change", () => { f.duracion.value = String(KD.byId("tiposCita", f.tipoId.value).duracion); pintarTratamientos(); });
+  f.tipoId.addEventListener("change", () => { f.duracion.value = String(KD.byId("tiposCita", f.tipoId.value).duracion); pintarTratamientos(); pintarHoras(); });
   f.tratamiento.addEventListener("change", () => {
     const [tipo, idv] = f.tratamiento.value.split(":");
     if (!idv) return;
     const trat = tipo === "plan" ? KD.byId("tratamientos", KD.byId("planes", idv).tratamientoId) : KD.byId("tratamientos", idv);
     if (tipo === "plan") f.piezas.value = KD.byId("planes", idv).pieza || "";
-    if (trat && duraciones.includes(trat.duracion)) f.duracion.value = String(trat.duracion);
+    if (trat && duraciones.includes(trat.duracion)) { f.duracion.value = String(trat.duracion); pintarHoras(); }
   });
   m.querySelector("[data-alta]")?.addEventListener("click", () => {
     const actual = { ...d, ...KD.leerForm(f) };
@@ -439,6 +453,8 @@ KD.formCita = (datos) => {
       if (t === "plan") { planId = idv; tratamientoId = KD.byId("planes", idv).tratamientoId; } else tratamientoId = idv;
     } else if (v.tipoId === "c4") tratamientoId = "t14";
     const piezas = tipo?.tratamiento ? KD.listaPiezas(v.piezas).join(", ") : "";
+    const sinCambioHorario = original && v.fecha === original.fecha && v.hora === original.hora;
+    if (!sinCambioHorario && enPasado(v.fecha, v.hora)) { f.hora.classList.add("invalido"); mostrar("No se pueden agendar citas en días u horas que ya pasaron. Elige otro horario."); return; }
     const prueba = { id: existente?.id, pacienteId: pac.id, doctorId: v.doctorId, sucursalId: v.sucursalId, unidad: Number(v.unidad), fecha: v.fecha, hora: v.hora, duracion: Number(v.duracion) || 30 };
     const choqueUnidad = choqueCita(prueba, true);
     if (choqueUnidad) { mostrar(`${choqueUnidad} Elige otra hora u otra unidad.`); return; }
