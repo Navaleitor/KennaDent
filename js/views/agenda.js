@@ -103,7 +103,11 @@ KD.vistas.agenda = (main) => {
   main.querySelectorAll("[data-estado-cita]").forEach((s) => {
     s.addEventListener("pointerdown", (e) => e.stopPropagation());
     s.addEventListener("click", (e) => e.stopPropagation());
-    s.addEventListener("change", () => cambiarEstado(KD.byId("citas", s.dataset.estadoCita), s.value));
+    s.addEventListener("change", () => {
+      const c = KD.byId("citas", s.dataset.estadoCita), nuevo = s.value;
+      s.value = c.estado; // si se cierra la ventana del motivo sin confirmar, la cita sigue igual
+      cambiarEstado(c, nuevo);
+    });
   });
 
   // Crear cita con clic en un espacio libre
@@ -247,13 +251,38 @@ function choqueCita(c, ignorarDoctor = false) {
 }
 
 function cambiarEstado(c, estado) {
-  const aplicar = () => {
-    c.estado = estado;
-    KD.guardar(); KD.cerrarModal(); KD.render();
-    KD.toast(`Cita marcada como "${KD.ESTADOS_CITA[estado]}"`);
-  };
-  if (estado === "cancelada") KD.confirmar("Cancelar cita", "El espacio queda libre en la agenda para otro paciente. La cita queda en el historial del paciente como cancelada.", "Cancelar cita", aplicar);
-  else aplicar();
+  if (estado === "cancelada") return cancelarCita(c);
+  c.estado = estado;
+  KD.guardar(); KD.cerrarModal(); KD.render();
+  KD.toast(`Cita marcada como "${KD.ESTADOS_CITA[estado]}"`);
+}
+
+// Cancelar o eliminar siempre piden motivo y dejan registro de quién y cuándo (#18)
+const registroBaja = (motivo) => ({ motivo, usuarioId: KD.usuario().id, fecha: KD.hoy(), hora: KD.aHora(KD.ahoraMin()) });
+const resumenCita = (c) => `<strong>${KD.esc(KD.byId("pacientes", c.pacienteId)?.nombre)}</strong> (${KD.esc(KD.fmtFecha(c.fecha))}, ${c.hora})`;
+function cancelarCita(c) {
+  KD.pedirMotivo({
+    titulo: "Cancelar cita",
+    mensaje: `Se cancelará la cita de ${resumenCita(c)}. Desaparece de la agenda y queda en el historial del paciente con el motivo.`,
+    boton: "Cancelar cita",
+    onOk: (motivo) => {
+      c.estado = "cancelada";
+      c.cancelacion = registroBaja(motivo);
+      KD.guardar(); KD.render(); KD.toast("Cita cancelada");
+    },
+  });
+}
+function eliminarCita(c) {
+  KD.pedirMotivo({
+    titulo: "Eliminar cita",
+    mensaje: `Se eliminará la cita de ${resumenCita(c)} y el espacio queda libre. Queda en el historial del paciente como eliminada, con el motivo.`,
+    boton: "Eliminar",
+    onOk: (motivo) => {
+      KD.db.citas = KD.db.citas.filter((x) => x.id !== c.id);
+      KD.db.citasEliminadas.push({ ...c, eliminacion: registroBaja(motivo) });
+      KD.guardar(); KD.render(); KD.toast("Cita eliminada");
+    },
+  });
 }
 
 function vistaMes(citas, desde, hasta, nUnidades) {
@@ -313,6 +342,7 @@ KD.detalleCita = (id) => {
         <dt>Tipo de cita</dt><dd>${KD.esc(tipo?.nombre)}</dd>
         ${c.tratamientoId ? `<dt>Tratamiento</dt><dd>${KD.esc(KD.nombreTrat(c.tratamientoId))}${c.piezas ? ` · pieza(s) ${KD.esc(c.piezas)}` : ""}</dd>` : ""}
         <dt>Estado</dt><dd>${KD.badgeEstadoCita(c.estado)}</dd>
+        ${c.cancelacion ? `<dt>Motivo de cancelación</dt><dd>${KD.textoBaja(c.cancelacion)}</dd>` : ""}
         <dt>Registro del doctor</dt><dd>${cons ? KD.badge("Consulta registrada", "ok") : KD.badge(c.estado === "no_asistio" ? "No aplica" : "Pendiente", c.estado === "no_asistio" ? "" : "warn")}</dd>
         ${verCobro && (cons || c.cobro) ? `<dt>Cobro</dt><dd>${c.cobro ? `${KD.badge(`Cobrado · ${KD.METODOS[c.cobro.metodo]}`, "ok")} <span class="mono">${KD.fmtDinero(c.cobro.monto)}</span>` : c.cobrado ? KD.badge("Cobrado", "ok") : pendienteCobro ? `${KD.badge("Pendiente de cobro", "warn")} <span class="mono">${KD.fmtDinero(KD.totalConsulta(cons))}</span>` : "—"}</dd>` : ""}
         ${c.notas ? `<dt>Notas</dt><dd>${KD.esc(c.notas)}</dd>` : ""}
@@ -333,21 +363,20 @@ KD.detalleCita = (id) => {
   m.querySelector("[data-editar]")?.addEventListener("click", () => KD.formCita(c));
   m.querySelector("[data-consulta]")?.addEventListener("click", () => KD.formConsulta(c));
   m.querySelector("[data-cobrar]")?.addEventListener("click", () => KD.formCobro(c));
-  m.querySelector("[data-eliminar]")?.addEventListener("click", () => KD.confirmar("Eliminar cita",
-    `Se borrará la cita de <strong>${KD.esc(p.nombre)}</strong> (${KD.esc(KD.fmtFecha(c.fecha))}, ${c.hora}) y el espacio queda libre. Si el paciente canceló, es mejor usar "Cancelar cita" para que quede en su historial.`,
-    "Eliminar", () => {
-      KD.db.citas = KD.db.citas.filter((x) => x.id !== c.id);
-      KD.guardar(); KD.render(); KD.toast("Cita eliminada");
-    }));
+  m.querySelector("[data-eliminar]")?.addEventListener("click", () => eliminarCita(c));
 };
 
-// ---------- Alta / edición de cita ----------
+// ---------- Alta / edición de cita (#17) ----------
+// Se llena en orden: paciente → sucursal → doctor → tratamiento (da la duración) → fecha y hora
+// (solo horarios con el doctor libre) → unidad (solo sillas libres). Cada paso se habilita al llenar el anterior.
+const activaEnAgenda = (x) => !["cancelada", "no_asistio"].includes(x.estado);
+const seEnciman = (x, ini, fin) => KD.aMinutos(x.hora) < fin && KD.finCita(x) > ini;
+
 KD.formCita = (datos) => {
   const existente = datos.id ? datos : null;
   const sucs = KD.sucursalesUsuario();
-  const d = { fecha: KD.hoy(), hora: "10:00", tipoId: "c1", duracion: 30, notas: "", tratamientoId: "", piezas: "", ...datos };
+  const d = { fecha: KD.hoy(), hora: "", tipoId: "c1", duracion: 30, notas: "", tratamientoId: "", piezas: "", ...datos };
   d.sucursalId = d.sucursalId || KD.sucursalUnica();
-  d.unidad = d.unidad || 1;
   if (!existente && d.fecha < KD.hoy()) d.fecha = KD.hoy();
   // Al editar, la fecha y hora originales se respetan aunque ya hayan pasado; solo no se puede mover al pasado
   const original = existente ? { fecha: existente.fecha, hora: existente.hora } : null;
@@ -355,29 +384,31 @@ KD.formCita = (datos) => {
   const pacientes = KD.db.pacientes.filter((p) => p.activo);
   const etiquetaPac = (p) => `${p.nombre} · ${p.expediente}`;
   const pacSel = d.pacienteId ? KD.byId("pacientes", d.pacienteId) : null;
-  const opcionesDoc = (sucId, sel) => KD.opciones(KD.doctores([sucId]).map((x) => ({ id: x.id, nombre: `${KD.nombrePersona(x)}${x.especialidad ? ` (${x.especialidad})` : ""}` })), sel);
+  const opcionesDoc = (sucId, sel) => `<option value="">Elige el doctor…</option>` + KD.opciones(KD.doctores([sucId]).map((x) => ({ id: x.id, nombre: `${KD.nombrePersona(x)}${x.especialidad ? ` (${x.especialidad})` : ""}` })), sel);
   const duraciones = [15, 30, 45, 60, 75, 90, 105, 120, 150, 180, 240];
+  const paso = (n, texto) => `<span><b class="paso-num">${n}</b> ${texto} <em>*</em></span>`;
 
   const m = KD.modal({
     titulo: existente ? "Editar cita" : "Nueva cita",
-    subtitulo: "La agenda se organiza por unidad (sillón dental): una unidad no puede tener dos pacientes a la vez.",
+    subtitulo: "Llena los pasos en orden: solo se ofrecen los horarios en que el doctor está libre y las unidades (sillones) desocupadas.",
     ancho: "ancho",
     cuerpo: `<form class="form-grid" novalidate>
-      <label class="campo full"><span>Paciente <em>*</em></span>
+      <label class="campo full"><span><b class="paso-num">1</b> Paciente <em>*</em></span>
         <input name="paciente" list="lista-pacientes" required placeholder="Escribe el nombre o el expediente" value="${pacSel ? KD.esc(etiquetaPac(pacSel)) : ""}" autocomplete="off">
         <datalist id="lista-pacientes">${pacientes.map((p) => `<option value="${KD.esc(etiquetaPac(p))}">`).join("")}</datalist>
         ${KD.puede("pacientes_editar") ? `<span class="ayuda">¿Es nuevo? <button type="button" class="btn-link" data-alta>Dar de alta al paciente</button></span>` : ""}
       </label>
-      <label class="campo"><span>Doctor <em>*</em></span><select name="doctorId" required>${opcionesDoc(d.sucursalId, d.doctorId)}</select></label>
-      ${sucs.length > 1 ? `<label class="campo"><span>Sucursal</span><select name="sucursalId">${KD.opciones(sucs, d.sucursalId)}</select></label>` : `<input type="hidden" name="sucursalId" value="${d.sucursalId}">`}
-      <label class="campo"><span>Unidad (sillón) <em>*</em></span><select name="unidad">${KD.unidades(d.sucursalId).map((x) => `<option value="${x}" ${x === Number(d.unidad) ? "selected" : ""}>Unidad ${x}</option>`).join("")}</select></label>
-      <label class="campo"><span>Fecha <em>*</em></span><input type="date" name="fecha" value="${d.fecha}" min="${minFecha}" required></label>
-      <label class="campo"><span>Hora <em>*</em></span><select name="hora" required></select></label>
-      <label class="campo"><span>Duración</span><select name="duracion">${duraciones.map((x) => `<option value="${x}" ${x === Number(d.duracion) ? "selected" : ""}>${x} minutos</option>`).join("")}</select></label>
-      <label class="campo"><span>Tipo de cita</span><select name="tipoId">${KD.opciones(KD.db.tiposCita, d.tipoId)}</select></label>
+      ${sucs.length > 1 ? `<label class="campo">${paso(2, "Sucursal")}<select name="sucursalId">${KD.opciones(sucs, d.sucursalId)}</select></label>` : `<input type="hidden" name="sucursalId" value="${d.sucursalId}">`}
+      <label class="campo">${paso(sucs.length > 1 ? 3 : 2, "Doctor")}<select name="doctorId" required>${opcionesDoc(d.sucursalId, d.doctorId)}</select></label>
+      <label class="campo"><span><b class="paso-num">${sucs.length > 1 ? 4 : 3}</b> Tipo de cita</span><select name="tipoId">${KD.opciones(KD.db.tiposCita, d.tipoId)}</select></label>
       <label class="campo" data-trat><span>Tratamiento a realizar <em>*</em></span><select name="tratamiento"></select></label>
       <label class="campo" data-trat><span>Pieza(s) a atender</span><input name="piezas" value="${KD.esc(d.piezas)}" placeholder="Ej. 16, 17"></label>
+      <label class="campo"><span>Duración estimada</span><select name="duracion">${duraciones.map((x) => `<option value="${x}" ${x === Number(d.duracion) ? "selected" : ""}>${x} minutos</option>`).join("")}</select></label>
       <p class="nota-form" data-nota-tipo hidden></p>
+      <label class="campo">${paso(sucs.length > 1 ? 5 : 4, "Fecha")}<input type="date" name="fecha" value="${d.fecha}" min="${minFecha}" required></label>
+      <label class="campo">${paso(sucs.length > 1 ? 6 : 5, "Hora")}<select name="hora" required></select></label>
+      <label class="campo">${paso(sucs.length > 1 ? 7 : 6, "Unidad (sillón)")}<select name="unidad" required></select></label>
+      <p class="full nota-form" data-sin-horas hidden></p>
       <label class="campo full"><span>Notas</span><textarea name="notas" rows="2" placeholder="Indicaciones para el equipo…">${KD.esc(d.notas)}</textarea></label>
       <p class="full nota-form bad" data-aviso hidden></p>
     </form>`,
@@ -385,19 +416,69 @@ KD.formCita = (datos) => {
   });
   const f = m.querySelector("form");
   const pacActual = () => pacientes.find((p) => etiquetaPac(p) === f.paciente.value) || pacientes.find((p) => p.expediente === f.paciente.value.trim().toUpperCase());
+  const otras = () => KD.db.citas.filter((x) => x.id !== existente?.id && x.fecha === f.fecha.value && activaEnAgenda(x));
+  const unidadesLibres = (t, dur, lista = otras()) => KD.unidades(f.sucursalId.value)
+    .filter((u) => !lista.some((x) => x.sucursalId === f.sucursalId.value && (x.unidad || 1) === u && seEnciman(x, t, t + dur)));
+  const necesitaTrat = () => !!KD.byId("tiposCita", f.tipoId.value)?.tratamiento;
 
-  // Horarios cada AG_PASO minutos, sin los que ya pasaron; "ocupado" si la cita completa se encimaría con otra en esa unidad
+  // Habilita cada paso solo cuando el anterior está lleno
+  const actualizarPasos = () => {
+    const okPac = !!pacActual();
+    const okDoc = okPac && !!f.doctorId.value;
+    const okTrat = okDoc && (!necesitaTrat() || !!f.tratamiento.value);
+    const okHora = okTrat && !!f.hora.value;
+    if (f.sucursalId.tagName === "SELECT") f.sucursalId.disabled = !okPac;
+    f.doctorId.disabled = !okPac;
+    [f.tipoId, f.tratamiento, f.piezas, f.duracion].forEach((el) => (el.disabled = !okDoc));
+    f.fecha.disabled = f.hora.disabled = !okTrat;
+    f.unidad.disabled = !okHora;
+  };
+
+  // Horarios cada AG_PASO minutos en que el doctor está libre toda la cita y queda al menos una silla
   const pintarHoras = () => {
-    const suc = f.sucursalId.value, un = Number(f.unidad.value), fe = f.fecha.value, dur = Number(f.duracion.value) || 30;
-    const enUnidad = KD.db.citas.filter((x) => x.id !== existente?.id && x.fecha === fe && x.sucursalId === suc && (x.unidad || 1) === un && !["cancelada", "no_asistio"].includes(x.estado));
-    const minutos = [];
-    for (let t = AG_INICIO; t < AG_FIN; t += AG_PASO) if (!enPasado(fe, KD.aHora(t))) minutos.push(t);
-    if (original && fe === original.fecha && !minutos.includes(KD.aMinutos(original.hora))) minutos.push(KD.aMinutos(original.hora));
-    minutos.sort((a, b) => a - b);
-    const ocupadas = new Set(minutos.filter((t) => enUnidad.some((x) => KD.aMinutos(x.hora) < t + dur && KD.finCita(x) > t)).map(KD.aHora));
+    const fe = f.fecha.value, dur = Number(f.duracion.value) || 30, doc = f.doctorId.value;
+    const nota = m.querySelector("[data-sin-horas]");
+    nota.hidden = true;
+    if (!doc) { f.hora.innerHTML = `<option value="">Elige primero al doctor</option>`; return pintarUnidades(); }
+    const lista = otras();
+    const delDoc = lista.filter((x) => x.doctorId === doc);
+    const opciones = [];
+    for (let t = AG_INICIO; t + dur <= AG_FIN; t += AG_PASO) {
+      const esOriginal = original && fe === original.fecha && KD.aHora(t) === original.hora;
+      if (enPasado(fe, KD.aHora(t)) && !esOriginal) continue;
+      if (delDoc.some((x) => seEnciman(x, t, t + dur))) continue;
+      const libres = unidadesLibres(t, dur, lista).length;
+      if (libres) opciones.push({ t, libres });
+    }
+    if (original && fe === original.fecha && !opciones.some((o) => KD.aHora(o.t) === original.hora)) {
+      const t = KD.aMinutos(original.hora);
+      if (!delDoc.some((x) => seEnciman(x, t, t + dur)) && unidadesLibres(t, dur, lista).length) opciones.push({ t, libres: unidadesLibres(t, dur, lista).length });
+      opciones.sort((a, b) => a.t - b.t);
+    }
     const previo = f.hora.value || d.hora;
-    const sel = minutos.map(KD.aHora).includes(previo) ? previo : KD.aHora(minutos.find((t) => !ocupadas.has(KD.aHora(t))) ?? minutos[0] ?? 0);
-    f.hora.innerHTML = minutos.length ? KD.opcionesHora(sel, minutos, ocupadas) : `<option value="">Ya no hay horarios disponibles este día</option>`;
+    if (!opciones.length) {
+      f.hora.innerHTML = `<option value="">Sin horarios libres este día</option>`;
+      nota.innerHTML = `${KD.icon("alerta", 16)} <span>${KD.esc(KD.nombreUsuario(doc))} no tiene horarios libres de ${dur} minutos el ${KD.esc(KD.fmtFecha(fe, { weekday: "long", day: "numeric", month: "long" }))}${fe === KD.hoy() ? " (ya no quedan horas hoy)" : ""}. Prueba otra fecha u otro doctor.</span>`;
+      nota.hidden = false;
+      return pintarUnidades();
+    }
+    const sel = opciones.some((o) => KD.aHora(o.t) === previo) ? previo : KD.aHora(opciones[0].t);
+    f.hora.innerHTML = opciones.map(({ t, libres }) => {
+      const h = KD.aHora(t);
+      const txt = new Date(2000, 0, 1, Math.floor(t / 60), t % 60).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" });
+      return `<option value="${h}" ${h === sel ? "selected" : ""}>${txt} · ${libres} ${libres === 1 ? "unidad libre" : "unidades libres"}</option>`;
+    }).join("");
+    pintarUnidades();
+  };
+  // Solo las unidades desocupadas durante toda la cita
+  const pintarUnidades = () => {
+    if (!f.hora.value) { f.unidad.innerHTML = `<option value="">Elige primero la hora</option>`; return actualizarPasos(); }
+    const t = KD.aMinutos(f.hora.value), dur = Number(f.duracion.value) || 30;
+    const libres = unidadesLibres(t, dur);
+    const previo = Number(f.unidad.value || d.unidad);
+    const sel = libres.includes(previo) ? previo : libres[0];
+    f.unidad.innerHTML = libres.map((u) => `<option value="${u}" ${u === sel ? "selected" : ""}>Unidad ${u}</option>`).join("");
+    actualizarPasos();
   };
   const pintarTratamientos = () => {
     const tipo = KD.byId("tiposCita", f.tipoId.value);
@@ -406,7 +487,7 @@ KD.formCita = (datos) => {
     const nota = m.querySelector("[data-nota-tipo]");
     nota.hidden = !tipo?.diagnostico;
     if (tipo?.diagnostico) nota.innerHTML = `${KD.icon("diente", 16)} <span>Cita de diagnóstico: al registrarla, el doctor llenará el <strong>odontograma</strong> del paciente.</span>`;
-    if (!conTrat) return;
+    if (!conTrat) { f.tratamiento.innerHTML = ""; return; }
     const pac = pacActual();
     const pend = pac ? KD.pendientePaciente(pac.id) : [];
     const selPrevio = f.tratamiento.value || (d.planId ? `plan:${d.planId}` : d.tratamientoId ? `t:${d.tratamientoId}` : "");
@@ -414,52 +495,57 @@ KD.formCita = (datos) => {
       ${pend.length ? `<optgroup label="Pendiente en su plan">${pend.map((x) => `<option value="plan:${x.id}" ${selPrevio === `plan:${x.id}` ? "selected" : ""}>${KD.esc(KD.nombreTrat(x.tratamientoId))}${x.pieza ? ` · pieza ${KD.esc(x.pieza)}` : ""}${x.estado === "aceptado" ? " ✓ aceptado" : ""}</option>`).join("")}</optgroup>` : ""}
       <optgroup label="Catálogo">${KD.db.tratamientos.filter((t) => t.activo).map((t) => `<option value="t:${t.id}" ${selPrevio === `t:${t.id}` ? "selected" : ""}>${KD.esc(t.nombre)} · ${t.duracion} min</option>`).join("")}</optgroup>`;
   };
-  pintarHoras();
   pintarTratamientos();
-  f.sucursalId.addEventListener?.("change", () => {
-    f.doctorId.innerHTML = opcionesDoc(f.sucursalId.value);
-    f.unidad.innerHTML = KD.unidades(f.sucursalId.value).map((x) => `<option value="${x}">Unidad ${x}</option>`).join("");
+  pintarHoras();
+
+  f.paciente.addEventListener("input", () => { pintarTratamientos(); actualizarPasos(); });
+  f.paciente.addEventListener("change", () => { pintarTratamientos(); actualizarPasos(); });
+  if (f.sucursalId.tagName === "SELECT") f.sucursalId.addEventListener("change", () => {
+    const docPrevio = f.doctorId.value;
+    f.doctorId.innerHTML = opcionesDoc(f.sucursalId.value, docPrevio);
     pintarHoras();
   });
-  f.unidad.addEventListener("change", pintarHoras);
+  f.doctorId.addEventListener("change", pintarHoras);
   f.fecha.addEventListener("change", pintarHoras);
   f.duracion.addEventListener("change", pintarHoras);
-  f.paciente.addEventListener("change", pintarTratamientos);
+  f.hora.addEventListener("change", pintarUnidades);
   f.tipoId.addEventListener("change", () => { f.duracion.value = String(KD.byId("tiposCita", f.tipoId.value).duracion); pintarTratamientos(); pintarHoras(); });
   f.tratamiento.addEventListener("change", () => {
     const [tipo, idv] = f.tratamiento.value.split(":");
-    if (!idv) return;
-    const trat = tipo === "plan" ? KD.byId("tratamientos", KD.byId("planes", idv).tratamientoId) : KD.byId("tratamientos", idv);
-    if (tipo === "plan") f.piezas.value = KD.byId("planes", idv).pieza || "";
-    if (trat && duraciones.includes(trat.duracion)) { f.duracion.value = String(trat.duracion); pintarHoras(); }
+    if (idv) {
+      const trat = tipo === "plan" ? KD.byId("tratamientos", KD.byId("planes", idv).tratamientoId) : KD.byId("tratamientos", idv);
+      if (tipo === "plan") f.piezas.value = KD.byId("planes", idv).pieza || "";
+      if (trat && duraciones.includes(trat.duracion)) f.duracion.value = String(trat.duracion);
+    }
+    pintarHoras();
   });
   m.querySelector("[data-alta]")?.addEventListener("click", () => {
     const actual = { ...d, ...KD.leerForm(f) };
-    KD.formPaciente(null, (p) => KD.formCita({ ...actual, id: existente?.id, pacienteId: p.id, unidad: Number(actual.unidad), duracion: Number(actual.duracion) }));
+    KD.formPaciente(null, (p) => KD.formCita({ ...actual, id: existente?.id, pacienteId: p.id, unidad: Number(actual.unidad) || d.unidad, duracion: Number(actual.duracion) || d.duracion }));
   });
 
   m.querySelector("[data-guardar]").addEventListener("click", () => {
-    if (!KD.validar(f)) return;
-    const v = KD.leerForm(f);
-    const pac = pacActual();
     const aviso = m.querySelector("[data-aviso]");
     const mostrar = (msg) => { aviso.innerHTML = `${KD.icon("alerta", 16)} <span>${msg}</span>`; aviso.hidden = false; };
+    const pac = pacActual();
     if (!pac) { f.paciente.classList.add("invalido"); mostrar("Selecciona un paciente de la lista."); return; }
+    if (!f.doctorId.value) { f.doctorId.classList.add("invalido"); mostrar("Elige el doctor que atenderá la cita."); return; }
+    if (necesitaTrat() && !f.tratamiento.value) { f.tratamiento.classList.add("invalido"); mostrar("Elige qué tratamiento se le va a hacer al paciente."); return; }
+    if (!f.hora.value) { f.hora.classList.add("invalido"); mostrar("No hay un horario libre elegido. Prueba otra fecha u otro doctor."); return; }
+    if (!KD.validar(f)) return;
+    const v = KD.leerForm(f);
     const tipo = KD.byId("tiposCita", v.tipoId);
     let tratamientoId = "", planId = null;
     if (tipo?.tratamiento) {
-      const [t, idv] = (v.tratamiento || "").split(":");
-      if (!idv) { f.tratamiento.classList.add("invalido"); mostrar("Elige qué tratamiento se le va a hacer al paciente."); return; }
+      const [t, idv] = v.tratamiento.split(":");
       if (t === "plan") { planId = idv; tratamientoId = KD.byId("planes", idv).tratamientoId; } else tratamientoId = idv;
     } else if (v.tipoId === "c4") tratamientoId = "t14";
     const piezas = tipo?.tratamiento ? KD.listaPiezas(v.piezas).join(", ") : "";
     const sinCambioHorario = original && v.fecha === original.fecha && v.hora === original.hora;
     if (!sinCambioHorario && enPasado(v.fecha, v.hora)) { f.hora.classList.add("invalido"); mostrar("No se pueden agendar citas en días u horas que ya pasaron. Elige otro horario."); return; }
     const prueba = { id: existente?.id, pacienteId: pac.id, doctorId: v.doctorId, sucursalId: v.sucursalId, unidad: Number(v.unidad), fecha: v.fecha, hora: v.hora, duracion: Number(v.duracion) || 30 };
-    const choqueUnidad = choqueCita(prueba, true);
-    if (choqueUnidad) { mostrar(`${choqueUnidad} Elige otra hora u otra unidad.`); return; }
-    const choqueDoc = choqueCita(prueba);
-    if (choqueDoc && aviso.dataset.ok !== "1") { mostrar(`${choqueDoc} Presiona de nuevo para agendar de todos modos.`); aviso.dataset.ok = "1"; return; }
+    const choque = choqueCita(prueba);
+    if (choque) { mostrar(`${choque} Elige otra hora u otra unidad.`); return; }
     const cita = existente || { id: KD.uid("ci"), estado: "programada" };
     Object.assign(cita, { ...prueba, id: cita.id, tipoId: v.tipoId, notas: v.notas, tratamientoId, piezas });
     if (planId) cita.planId = planId; else delete cita.planId;

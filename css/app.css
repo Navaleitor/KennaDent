@@ -275,6 +275,13 @@ td .sub { display: block; font-size: 12px; color: var(--muted); }
 .cita-atendida, .pres-completado, .plan-realizado, .activo-pill { background: var(--ok-soft); color: var(--ok); }
 .cita-no_asistio, .pres-rechazado, .plan-rechazado { background: var(--bad-soft); color: var(--bad); }
 .cita-cancelada, .pres-borrador { background: var(--neutral-soft); color: var(--muted); }
+.cita-eliminada { background: var(--bad-soft); color: var(--bad); }
+.motivo-baja { display: block; margin-top: 4px; font-size: 12px; color: var(--text-2); white-space: normal; }
+tr.eliminada td { color: var(--muted); }
+.motivos { border: 0; padding: 0; margin: 0; min-width: 0; }
+.motivos legend { font-size: 13px; font-weight: 700; margin-bottom: 8px; padding: 0; grid-column: 1 / -1; }
+.paso-num { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font-size: 11px; font-weight: 800; margin-right: 2px; }
+.campo :is(input, select, textarea):disabled { opacity: .5; cursor: not-allowed; }
 
 .avatar { --c: var(--primary); width: 38px; height: 38px; border-radius: 12px; display: inline-grid; place-items: center; font-weight: 800; font-size: 12px; flex-shrink: 0;
   background: color-mix(in srgb, var(--c) 16%, var(--surface)); color: color-mix(in srgb, var(--c) 80%, var(--text)); }
