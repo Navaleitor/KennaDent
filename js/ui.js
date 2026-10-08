@@ -155,9 +155,10 @@ KD.validar = (form) => {
 KD.opciones = (lista, sel, valor = "id", texto = "nombre") =>
   lista.map((x) => `<option value="${KD.esc(x[valor])}" ${String(x[valor]) === String(sel) ? "selected" : ""}>${KD.esc(x[texto])}</option>`).join("");
 // Horarios cada 15 minutos para elegir la hora de una cita (corrige los Issues #3 y #9)
-KD.opcionesHora = (sel, desde = 8 * 60, hasta = 20 * 60, ocupadas = new Set()) => {
+// Opciones de hora a partir de una lista de minutos del día (ej. 600 = 10:00)
+KD.opcionesHora = (sel, minutos, ocupadas = new Set()) => {
   const out = [];
-  for (let t = desde; t < hasta; t += 15) {
+  for (const t of minutos) {
     const h = KD.aHora(t);
     const txt = new Date(2000, 0, 1, Math.floor(t / 60), t % 60).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" });
     out.push(`<option value="${h}" ${h === sel ? "selected" : ""}>${txt}${ocupadas.has(h) ? " · ocupado" : ""}</option>`);

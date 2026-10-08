@@ -71,7 +71,9 @@ Reglas de acceso acordadas (Issues #10 y #11):
 - Filtro por sucursal y por doctor.
 - Cada cita se ve dividida en dos: a la izquierda una **bandera del color del doctor**, el paciente, el tratamiento y el doctor; a la derecha el **estado** (por confirmar, confirmada, en sala, atendida, no asistió), que se cambia ahí mismo.
 - **Arrastrar** una cita para cambiarla de hora o de unidad; **estirar** desde abajo para cambiar la duración. Cancelar o eliminar libera el espacio.
-- La hora se elige de una lista cada 15 minutos que marca los horarios ocupados de la unidad (Issues #3 y #9).
+- La hora se elige de una lista **cada 30 minutos (solo :00 y :30)** que marca los horarios ocupados de la unidad (Issues #3, #9 y #15). Arrastrar una cita también la acomoda a :00 o :30. Las duraciones no cambian (15, 45, 75 min… siguen existiendo).
+- **No se agenda en el pasado:** no se puede crear ni mover una cita a un día u hora que ya pasó (#14). Los días pasados se siguen viendo con todas sus citas; la parte que ya pasó se ve rayada.
+- Arriba de la agenda: vista (Día/Semana/Mes) a la izquierda, sucursal y doctor fijos a la derecha y las unidades en su propio renglón (#13).
 - No se permite empalmar dos citas en la misma unidad; si el doctor ya tiene otra cita se avisa.
 
 ### 2.4 Pacientes, resumen clínico e historial clínico
@@ -140,8 +142,11 @@ Reglas de acceso acordadas (Issues #10 y #11):
 - [ ] Material exacto que consume cada tratamiento (el de la demo es de ejemplo).
 - [ ] Horario de la agenda por sucursal (hoy es de 8:00 a 20:00 para todas).
 - [ ] ¿La mensualidad se cobra por sucursal, por doctor o con un precio fijo?
+- [ ] Qué hacer cuando una cita no cabe en el espacio libre de la unidad (alerta, redondear la duración a bloques de 30 min o sugerir otra silla). Se decide después de más pruebas (#15).
 
 Decidido (septiembre 2026): la agenda es por unidad; el doctor ve solo su agenda y a todos los pacientes; solo gestión ve dinero; recepción no toca datos clínicos; "presupuestos" se queda con ese nombre.
+
+Decidido (octubre 2026): citas solo a las :00 y :30; no se agenda en el pasado; al eliminar **o** cancelar una cita se pide motivo, la cita desaparece de la agenda y queda en el historial del paciente; puede hacerlo quien edita la agenda (v0.4.0, #18 y #19).
 
 ## 5. Notas técnicas
 

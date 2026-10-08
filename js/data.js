@@ -2,8 +2,8 @@
 // En producción esto se reemplaza por una base de datos (ver docs/requisitos.md).
 window.KD = window.KD || {};
 
-const STORAGE_KEY = "kennadent-demo-v3";
-const LLAVES_VIEJAS = ["kennadent-demo-v1", "kennadent-demo-v2"];
+const STORAGE_KEY = "kennadent-demo-v4";
+const LLAVES_VIEJAS = ["kennadent-demo-v1", "kennadent-demo-v2", "kennadent-demo-v3"];
 
 // ---------- Utilidades de fecha y texto ----------
 const pad = (n) => String(n).padStart(2, "0");
@@ -336,7 +336,7 @@ function generarDemo() {
               presupuestos.push(pres);
             }
           }
-          t += dur + pick([0, 15, 30, 30, 45, 60, 90]);
+          t = Math.ceil((t + dur) / 30) * 30 + pick([0, 0, 30, 30, 60, 90]); // siempre empiezan a las :00 o :30
         }
       }
     }
