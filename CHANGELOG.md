@@ -10,7 +10,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ### Agregado
 - **Validación del modelo de datos** (`docs/modelo-datos/`): informe con pruebas reales en PostgreSQL 16 y propuesta de esquema v0.2 multiempresa.
-- **Entorno local de pruebas (QA)** con Docker: PostgreSQL 16 con el esquema v0.2 y datos ficticios de dos empresas, pgAdmin con las conexiones listas y el prototipo servido en `localhost:8080`. Guía en `docs/entorno-local.md`.
+- **Backend Django 5.2 LTS + Django REST Framework** (`backend/`):
+  - las 36 tablas del modelo v0.2 como migraciones de Django, con llaves compuestas, triggers, vistas y Row Level Security; se comprobó que rechazan lo mismo que el esquema v0.2;
+  - cada petición se aísla por empresa en PostgreSQL (rol `kd_app`), sin depender de filtros en el código;
+  - API `/api/v1/`: inicio de sesión por clínica + usuario (o correo) con protección CSRF y límite de intentos, sucursales, personal, tipos de cita, tratamientos (precio solo con permiso "dinero"), pacientes (alta con expediente automático, búsqueda sin acentos, baja y bitácora de consulta) y agenda (sillón ocupado, doctor de otra sucursal y aviso de empalme);
+  - admin de plataforma para el equipo de KennaDent;
+  - 13 pruebas automáticas.
+- **Entorno local de pruebas (QA)** con Docker: PostgreSQL 16, backend, pgAdmin con las conexiones listas y el prototipo, todo en `localhost:8080`, con datos ficticios de dos empresas y sus usuarios. Guía en `docs/entorno-local.md`.
 
 ## [0.3.0] - 2026-09-29
 Rediseño con el estilo del prototipo de Kenia (Manus) y nuevas secciones. Corrige los Issues #3 al #11.

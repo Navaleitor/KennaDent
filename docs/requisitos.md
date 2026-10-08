@@ -141,11 +141,14 @@ Reglas de acceso acordadas (Issues #10 y #11):
 - [ ] Horario de la agenda por sucursal (hoy es de 8:00 a 20:00 para todas).
 - [ ] ¿La mensualidad se cobra por sucursal, por doctor o con un precio fijo?
 
+Decidido (octubre 2026): el backend será Django + PostgreSQL (ver sección 5).
+
 Decidido (septiembre 2026): la agenda es por unidad; el doctor ve solo su agenda y a todos los pacientes; solo gestión ve dinero; recepción no toca datos clínicos; "presupuestos" se queda con ese nombre.
 
 ## 5. Notas técnicas
 
 - **Prototipo actual:** HTML, CSS y JavaScript sin dependencias. Los datos son de ejemplo y se guardan en el navegador (`localStorage`), así que cada persona que lo abre ve su propia copia.
-- **Producción (recomendado):** Next.js y Supabase (PostgreSQL con *Row Level Security*, para que ninguna empresa pueda ver datos de otra), con autenticación real y respaldos.
+- **Producción (decidido, octubre 2026):** backend en **Django 5.2 LTS + Django REST Framework** sobre **PostgreSQL 16**, con *Row Level Security* para que ninguna empresa pueda ver datos de otra, autenticación real y respaldos. El frontend actual se conectará a la API (`/api/v1/`). Modelo de datos: `docs/modelo-datos/` (validación y propuesta v0.2, ya implementada como migraciones de Django en `backend/`).
+- **Inicio de sesión:** código de la clínica + usuario (`demo` / `andrea.garza`) o correo. Pendiente de confirmar cuál se muestra en la pantalla de entrada.
 - **Datos de salud:** cumplir con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, NOM-004-SSA3-2012 (expediente clínico) y NOM-024-SSA3-2012 (sistemas de información de registro electrónico para la salud). Esto incluye aviso de privacidad, cifrado y bitácora de quién consulta cada expediente.
 - **Contraseñas:** en el prototipo se guardan tal cual para que el administrador las vea (Issue #6). En producción deben guardarse cifradas (*hash*); el administrador solo verá la contraseña inicial al crearla o regenerarla, y el empleado la cambiará al entrar por primera vez.

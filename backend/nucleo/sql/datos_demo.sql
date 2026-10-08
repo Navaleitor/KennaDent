@@ -1,5 +1,7 @@
 -- =====================================================================
 -- KennaDent QA: datos de demostracion (FICTICIOS).
+-- Los carga: python manage.py cargar_demo   (despues de las migraciones;
+-- el mismo comando crea los usuarios para iniciar sesion).
 -- Copian la demo del prototipo (js/data.js): GRUPO DENTAL DEMO con
 -- CUMBRES, SAN PEDRO y CENTRO. Se agrega una segunda empresa para probar
 -- que una no ve los datos de la otra.
@@ -8,13 +10,12 @@
 --
 -- NUNCA cargar datos reales de pacientes en QA (LFPDPPP).
 -- =====================================================================
-SET search_path = kennadent, public;
 SELECT setseed(0.29);
 
 -- ---------- Empresas, sucursales y sillones ----------
-INSERT INTO empresa (nombre_comercial, razon_social, rfc, telefono, correo) VALUES
-  ('GRUPO DENTAL DEMO', 'Grupo Dental Demo S.A. de C.V.', 'GDD000000XX0', '81 0000 0000', 'contacto@grupodentaldemo.mx'),
-  ('CLINICA AISLAMIENTO', 'Clinica de Prueba S.C.', 'CPR000000XX0', '55 0000 0000', 'prueba@clinica.mx');
+INSERT INTO empresa (codigo, nombre_comercial, razon_social, rfc, telefono, correo) VALUES
+  ('demo', 'GRUPO DENTAL DEMO', 'Grupo Dental Demo S.A. de C.V.', 'GDD000000XX0', '81 0000 0000', 'contacto@grupodentaldemo.mx'),
+  ('aislamiento', 'CLINICA AISLAMIENTO', 'Clinica de Prueba S.C.', 'CPR000000XX0', '55 0000 0000', 'prueba@clinica.mx');
 
 INSERT INTO sucursal (empresa_id, nombre, direccion, telefono, zona_horaria) VALUES
   (1, 'CUMBRES',   'Av. Ejemplo 100, Cumbres, Monterrey, N.L.',            '81 0000 0001', 'America/Monterrey'),

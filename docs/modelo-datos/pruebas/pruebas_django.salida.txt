@@ -1,0 +1,209 @@
+SET
+INSERT 0 2
+INSERT 0 4
+INSERT 0 4
+INSERT 0 3
+INSERT 0 3
+INSERT 0 3
+== T1: cita valida (DEBE PASAR)
+INSERT 0 1
+== T2: cita empalmada en el mismo sillon (DEBE FALLAR)
+== T3: cita cancelada en el mismo horario (DEBE PASAR)
+psql:/tmp/pd.sql:22: ERROR:  conflicting key value violates exclusion constraint "cita_sin_empalme_unidad"
+DETAIL:  Key (unidad_id, tstzrange(inicio, fin))=(1, ["2026-10-01 10:30:00-06","2026-10-01 11:30:00-06")) conflicts with existing key (unidad_id, tstzrange(inicio, fin))=(1, ["2026-10-01 10:00:00-06","2026-10-01 11:00:00-06")).
+INSERT 0 1
+-- T3b: reactivar esa cita cancelada choca con la T1 (DEBE FALLAR)
+psql:/tmp/pd.sql:28: ERROR:  conflicting key value violates exclusion constraint "cita_sin_empalme_unidad"
+DETAIL:  Key (unidad_id, tstzrange(inicio, fin))=(1, ["2026-10-01 10:30:00-06","2026-10-01 11:30:00-06")) conflicts with existing key (unidad_id, tstzrange(inicio, fin))=(1, ["2026-10-01 10:00:00-06","2026-10-01 11:00:00-06")).
+-- T3c: cita "no_asistio" en el mismo horario (DEBE PASAR)
+INSERT 0 1
+== T4: segunda sucursal base para el mismo trabajador (DEBE FALLAR por ux_trabajador_una_base)
+psql:/tmp/pd.sql:34: ERROR:  duplicate key value violates unique constraint "ux_trabajador_una_base"
+DETAIL:  Key (trabajador_id)=(1) already exists.
+== T5: precio por sucursal (Centro = 500 base, Norte = 650)
+INSERT 0 1
+INSERT 0 1
+ centro | norte  
+--------+--------
+ 500.00 | 650.00
+(1 row)
+
+== T6: presupuesto a plazos con pago parcial (total 650, pagado 325, saldo 325)
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+ presupuesto_id | total  | pagado | saldo  
+----------------+--------+--------+--------
+              1 | 650.00 | 325.00 | 325.00
+(1 row)
+
+ numero |   vence    | monto  | pagado |   estado   
+--------+------------+--------+--------+------------
+      1 | 2026-09-01 | 325.00 | 325.00 | pagada
+      2 | 2026-12-01 | 325.00 |      0 | por_vencer
+(2 rows)
+
+== T7: pago suelto sin presupuesto (DEBE PASAR)
+INSERT 0 1
+== T8: traslado de inventario (Centro 6, Norte 4)
+INSERT 0 1
+INSERT 0 1
+ traslado_id 
+-------------
+           1
+(1 row)
+
+ sucursal_id | existencia 
+-------------+------------
+           1 |      6.000
+           2 |      4.000
+(2 rows)
+
+-- T8b: trasladar mas de lo que hay (DEBE FALLAR)
+psql:/tmp/pd.sql:63: ERROR:  La sucursal 1 solo tiene 6.000 de este material; no se pueden trasladar 20
+CONTEXT:  PL/pgSQL function registrar_traslado(bigint,bigint,bigint,bigint,numeric,bigint,text) line 7 at RAISE
+-- T8c: movimiento "traslado" suelto, sin documento de traslado (DEBE FALLAR)
+psql:/tmp/pd.sql:66: ERROR:  new row for relation "inventario_movimiento" violates check constraint "inventario_movimiento_check"
+DETAIL:  Failing row contains (4, entrada, traslado, 4.000, null, 2026-10-08 14:30:41.041005-06, null, 1, null, 1, 2, 2).
+-- T8d: traslados incompletos (DEBE salir vacio)
+ id | movimientos 
+----+-------------
+(0 rows)
+
+== T9: aplicar a un pago mas dinero del que tiene (DEBE FALLAR)
+psql:-- T9b: aplicar 300 de los 400 (DEBE PASAR) y luego 101 mas (DEBE FALLAR)
+/tmp/pd.sql:71: ERROR:  El pago 2 es de 400.00, ya tiene 0 aplicado; no alcanza para 9999.00
+CONTEXT:  PL/pgSQL function tg_aplicacion_no_excede() line 9 at RAISE
+INSERT 0 1
+== T10: cita con un doctor en una sucursal donde NO esta asignado (DEBE FALLAR)
+psql:/tmp/pd.sql:74: ERROR:  El pago 2 es de 400.00, ya tiene 300.00 aplicado; no alcanza para 101.00
+CONTEXT:  PL/pgSQL function tg_aplicacion_no_excede() line 9 at RAISE
+psql:/tmp/pd.sql:78: ERROR:  insert or update on table "cita" violates foreign key constraint "cita_emp_trabajador_sucursal_2"
+DETAIL:  Key (empresa_id, trabajador_id, sucursal_id)=(1, 1, 3) is not present in table "trabajador_sucursal".
+-- T10b: sillon de otra sucursal distinta a la de la cita (DEBE FALLAR)
+-- T10c: mismo doctor en otro sillon a la misma hora (DEBE PASAR con aviso, como el frontend)
+psql:/tmp/pd.sql:81: ERROR:  insert or update on table "cita" violates foreign key constraint "cita_emp_unidad_1"
+DETAIL:  Key (empresa_id, sucursal_id, unidad_id)=(1, 2, 1) is not present in table "unidad".
+INSERT 0 1
+ trabajador_id | cita_a | cita_b 
+---------------+--------+--------
+             1 |      1 |      7
+(1 row)
+
+== T11: aplicar a la cuota de OTRO presupuesto (DEBE FALLAR)
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+psql:/tmp/pd.sql:91: ERROR:  insert or update on table "pago_aplicacion" violates foreign key constraint "pago_aplicacion_emp_cuota_4"
+DETAIL:  Key (empresa_id, cuota_id, presupuesto_id)=(1, 3, 1) is not present in table "cuota".
+== T12: pago de JUAN aplicado al presupuesto de PEDRO (DEBE FALLAR)
+INSERT 0 1
+psql:/tmp/pd.sql:95: ERROR:  insert or update on table "pago_aplicacion" violates foreign key constraint "pago_aplicacion_emp_presupuesto_2"
+DETAIL:  Key (empresa_id, presupuesto_id, paciente_id)=(1, 3, 1) is not present in table "presupuesto".
+-- T12b: mismo intento declarando al paciente "correcto" del presupuesto (DEBE FALLAR)
+psql:/tmp/pd.sql:97: ERROR:  insert or update on table "pago_aplicacion" violates foreign key constraint "pago_aplicacion_emp_pago_1"
+DETAIL:  Key (empresa_id, pago_id, paciente_id)=(1, 3, 3) is not present in table "pago".
+== T13: MULTIEMPRESA, referencias cruzadas (todas DEBEN FALLAR)
+-- T13a: cita de la empresa 1 con la paciente de la empresa 2
+psql:/tmp/pd.sql:102: ERROR:  insert or update on table "cita" violates foreign key constraint "cita_emp_paciente_3"
+DETAIL:  Key (empresa_id, paciente_id)=(1, 2) is not present in table "paciente".
+psql:/tmp/pd.sql:104: ERROR:  insert or update on table "trabajador_sucursal" violates foreign key constraint "trabajador_sucursal_emp_trabajador_1"
+DETAIL:  Key (empresa_id, trabajador_id)=(1, 3) is not present in table "trabajador".
+-- T13b: doctor de la empresa 2 asignado a una sucursal de la empresa 1
+-- T13c: lo mismo declarando empresa 2
+== T14: catalogos por empresa: la empresa 2 tambien tiene "LIMPIEZA DENTAL" y "GUANTES" (DEBE PASAR)
+psql:/tmp/pd.sql:106: ERROR:  insert or update on table "trabajador_sucursal" violates foreign key constraint "trabajador_sucursal_emp_sucursal_2"
+DETAIL:  Key (empresa_id, sucursal_id)=(2, 1) is not present in table "sucursal".
+INSERT 0 1
+INSERT 0 1
+-- T14b: mismo numero de expediente KD-00001 en dos empresas ya paso arriba; repetido en la MISMA empresa (DEBE FALLAR)
+== T15: piezas FDI
+-- T15a: pieza 20 (DEBE FALLAR)
+psql:/tmp/pd.sql:112: ERROR:  duplicate key value violates unique constraint "paciente_empresa_expediente_key"
+DETAIL:  Key (empresa_id, expediente)=(1, KD-00001) already exists.
+psql:/tmp/pd.sql:116: ERROR:  new row for relation "odontograma_hallazgo" violates check constraint "odontograma_hallazgo_pieza_check"
+DETAIL:  Failing row contains (1, 20, null, 2026-10-08 14:30:41.061507-06, null, null, null, 1, 1, 1, 1).
+-- T15b: pieza temporal 55 con caries en cara oclusal (DEBE PASAR)
+INSERT 0 1
+-- T15c: pieza 56 (no existe en temporales) (DEBE FALLAR)
+-- T15d: plan con piezas {16,19} (DEBE FALLAR)
+psql:/tmp/pd.sql:120: ERROR:  new row for relation "odontograma_hallazgo" violates check constraint "odontograma_hallazgo_pieza_check"
+DETAIL:  Failing row contains (3, 56, null, 2026-10-08 14:30:41.064081-06, null, null, null, 1, 1, 1, 1).
+psql:/tmp/pd.sql:123: ERROR:  new row for relation "plan_item" violates check constraint "plan_item_piezas_check"
+DETAIL:  Failing row contains (2, {16,19}, 1, 500.00, pendiente, 2026-10-08 14:30:41.064317-06, 2026-10-08 14:30:41.064317-06, null, 1, 1, null, 1, 1, 1).
+== T16: registro de consulta
+-- T16a: consulta de la cita 1 por su propio doctor (DEBE PASAR)
+INSERT 0 1
+INSERT 0 1
+-- T16b: el mismo renglon del plan realizado dos veces (DEBE FALLAR)
+psql:/tmp/pd.sql:133:-- T16c: consulta de la cita 6 registrada a nombre de OTRO trabajador (DEBE FALLAR)
+ ERROR:  duplicate key value violates unique constraint "ux_proc_plan_una_vez"
+DETAIL:  Key (plan_item_id)=(1) already exists.
+psql:/tmp/pd.sql:135: ERROR:  insert or update on table "consulta" violates foreign key constraint "consulta_emp_cita_1"
+DETAIL:  Key (empresa_id, cita_id, paciente_id, trabajador_id, sucursal_id)=(1, 6, 3, 2, 1) is not present in table "cita".
+-- T16d: segunda consulta para la misma cita (DEBE FALLAR)
+== T17: corte de caja cierra el dia
+psql:/tmp/pd.sql:137: ERROR:  duplicate key value violates unique constraint "consulta_cita_id_key"
+DETAIL:  Key (cita_id)=(1) already exists.
+INSERT 0 1
+   fecha    | efectivo_esperado | efectivo_contado | diferencia 
+------------+-------------------+------------------+------------
+ 2026-10-08 |           1100.00 |          1090.00 |     -10.00
+(1 row)
+
+-- T17b: pago en esa sucursal hoy (DEBE FALLAR)
+psql:/tmp/pd.sql:144: ERROR:  La caja de la sucursal 1 ya se cerro el 2026-10-08
+CONTEXT:  PL/pgSQL function tg_caja_abierta() line 7 at RAISE
+-- T17c: gasto en esa sucursal hoy (DEBE FALLAR)
+-- T17d: pago en OTRA sucursal hoy (DEBE PASAR)
+psql:/tmp/pd.sql:146: ERROR:  La caja de la sucursal 1 ya se cerro el 2026-10-08
+CONTEXT:  PL/pgSQL function tg_caja_abierta() line 7 at RAISE
+INSERT 0 1
+== T18: borrar un paciente (DEBE FALLAR: NOM-004)
+psql:/tmp/pd.sql:151: ERROR:  No se permite borrar renglones de paciente: use baja o un movimiento de correccion
+CONTEXT:  PL/pgSQL function tg_no_borrar() line 3 at RAISE
+== T19: estado calculado del presupuesto P-00001 (DEBE decir completado: su unico renglon se realizo)
+UPDATE 1
+  folio  |  estado  | estado_calculado | total  
+---------+----------+------------------+--------
+ P-00001 | aceptado | completado       | 650.00
+ P-00002 | enviado  | enviado          |   0.00
+ P-00003 | borrador | borrador         |   0.00
+(3 rows)
+
+== T20: AISLAMIENTO con RLS, conectado como la aplicacion (kd_app)
+SET
+-- T20a: sin decir la empresa, no ve ningun paciente (DEBE dar 0)
+ pacientes_visibles 
+--------------------
+                  0
+(1 row)
+
+-- T20b: como empresa 2 solo ve a su paciente (DEBE dar MARIA)
+SET
+ nombre 
+--------
+ MARIA
+(1 row)
+
+ citas_visibles_de_empresa_1 
+-----------------------------
+                           0
+(1 row)
+
+-- T20c: como empresa 2 intenta crear un paciente de la empresa 1 (DEBE FALLAR)
+psql:/tmp/pd.sql:166: ERROR:  new row violates row-level security policy for table "paciente"
+-- T20d: como empresa 2 intenta modificar pacientes de la empresa 1 (DEBE afectar 0 renglones)
+UPDATE 0
+-- T20e: la aplicacion no puede modificar un pago ya registrado (DEBE FALLAR: permiso)
+SET
+psql:/tmp/pd.sql:171: ERROR:  permission denied for table pago
+RESET
+RESET
+ nombre 
+--------
+ JUAN
+(1 row)
+
