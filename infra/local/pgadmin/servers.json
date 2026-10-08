@@ -1,0 +1,24 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "KennaDent QA (administrador)",
+      "Group": "KennaDent",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "kennadent_qa",
+      "Username": "kennadent",
+      "SSLMode": "prefer",
+      "Comment": "Dueno de las tablas: ve TODAS las empresas (se salta RLS). Contrasena: KD_DB_ADMIN_PASSWORD del .env"
+    },
+    "2": {
+      "Name": "KennaDent QA (como la aplicacion)",
+      "Group": "KennaDent",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "kennadent_qa",
+      "Username": "kd_app",
+      "SSLMode": "prefer",
+      "Comment": "Ve solo la empresa que indiques con SET app.empresa_id = '1'; Contrasena: KD_APP_PASSWORD del .env"
+    }
+  }
+}

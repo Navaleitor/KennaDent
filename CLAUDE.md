@@ -11,11 +11,13 @@
 - Los campos vacíos (`""`) no se guardan: al leer, tratarlos como opcionales (`KD.esc` ya acepta `undefined`).
 - Los scripts son clásicos (no módulos ES) para que funcione abriendo `index.html` con doble clic. Todo cuelga de `window.KD`.
 - Todo texto que venga de datos se escapa con `KD.esc()` antes de meterlo en `innerHTML`.
+- **Entorno local de QA** (`docker-compose.yml`, guía en `docs/entorno-local.md`): PostgreSQL 16 en `localhost:5433` con el esquema `docs/modelo-datos/kennadent_esquema_v0.2.sql` y datos ficticios de `infra/local/db/20_datos_demo.sql`, pgAdmin en `:5050` y el prototipo en `:8080`. Si cambias el esquema o los datos de demo, pruébalo con `docker compose down -v && docker compose up -d` y revisa `docker compose logs db`. Nunca datos reales de pacientes en QA.
 - Producción futura recomendada: Next.js + Supabase (Row Level Security para separar empresas). Considerar LFPDPPP, NOM-004-SSA3-2012 y NOM-024-SSA3-2012 (datos de salud).
 
 ## Estructura
 - `js/roles.js`: puestos, permisos y paleta de colores del equipo. `js/data.js`: datos, almacenamiento y reglas (registro de consulta, caja, inventario, avisos). `js/odonto.js`: odontograma. `js/metricas.js`: reportes y seguimiento. `js/ui.js`: modales, menús, avisos, íconos y gráficas. `js/app.js`: menú (Principal/Gestión), barra y rutas (`#/seccion`).
 - `js/views/*.js`: una pantalla por archivo, registrada en `KD.vistas`.
+- `docs/modelo-datos/`: modelo de datos (esquemas, informe de validación y pruebas SQL). `infra/local/`: scripts de la base y de pgAdmin para el entorno local.
 - `css/app.css`: tokens de color en `:root`, con modo noche por `prefers-color-scheme` y `[data-theme="dark"]`. Estilo sobrio y empresarial.
 
 ## Reglas del negocio (acordadas con el usuario)

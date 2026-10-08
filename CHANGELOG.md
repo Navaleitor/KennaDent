@@ -6,6 +6,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 - El segundo número (**x**) sube con cada entrega grande; el tercero (**y**) con correcciones.
 - La **1.0.0** será la primera versión lista para usarse con clínicas reales.
 
+## [Sin publicar]
+
+### Agregado
+- **Validación del modelo de datos** (`docs/modelo-datos/`): informe con pruebas reales en PostgreSQL 16 y propuesta de esquema v0.2 multiempresa.
+- **Entorno local de pruebas (QA)** con Docker: PostgreSQL 16 con el esquema v0.2 y datos ficticios de dos empresas, pgAdmin con las conexiones listas y el prototipo servido en `localhost:8080`. Guía en `docs/entorno-local.md`.
+
 ## [0.3.0] - 2026-09-29
 Rediseño con el estilo del prototipo de Kenia (Manus) y nuevas secciones. Corrige los Issues #3 al #11.
 

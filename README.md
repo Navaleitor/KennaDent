@@ -36,6 +36,7 @@ Tiene modo día/noche (botón de luna o sol) y se adapta a celular, tablet y com
 
 - **En línea:** https://navaleitor.github.io/KennaDent/ (con GitHub Pages activado sobre `main`)
 - **En tu computadora:** descarga el repositorio y abre `index.html` con doble clic.
+- **Entorno de pruebas con base de datos (QA):** `docker compose up -d` levanta PostgreSQL con el modelo propuesto y datos de demostración, pgAdmin y el prototipo. Guía paso a paso: [`docs/entorno-local.md`](docs/entorno-local.md).
 
 Para ver el sistema como otro trabajador (recepcionista, doctor, caja…), haz clic en tu nombre arriba a la derecha y elige a otra persona. Por ejemplo, **DRA. ANDREA GARZA LEAL** (doctora), **DANIELA FLORES ROJAS** (recepción) o **CARLOS MARTÍNEZ VEGA** (gerente). Desde ahí también puedes **restablecer los datos de ejemplo**.
 
@@ -52,6 +53,10 @@ js/ui.js              Componentes: ventanas, menús, avisos, íconos y gráficas
 js/app.js             Menú, barra superior y navegación
 js/views/*.js         Una pantalla por archivo
 docs/requisitos.md    Requisitos, fases y pendientes
+docs/modelo-datos/    Modelo de datos: esquemas SQL, informe de validación y pruebas
+docs/entorno-local.md Guía del entorno local de pruebas (Docker)
+docker-compose.yml    Entorno local: base de datos, pgAdmin y prototipo
+infra/local/          Scripts de inicio de la base y configuración de pgAdmin
 ```
 
 Los nombres, teléfonos, precios y cifras son de ejemplo.

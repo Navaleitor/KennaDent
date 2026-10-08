@@ -1,0 +1,73 @@
+# KennaDent: entorno local de pruebas (QA)
+# Uso:   docker compose up -d        (levantar)
+#        docker compose down         (apagar, conserva los datos)
+#        docker compose down -v      (apagar y BORRAR los datos; al subir se recrean)
+# Guia completa: docs/entorno-local.md
+#
+# Todos los puertos escuchan solo en 127.0.0.1: nadie de tu red puede entrar.
+
+name: kennadent
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${KD_DB_NOMBRE:-kennadent_qa}
+      POSTGRES_USER: ${KD_DB_ADMIN:-kennadent}
+      POSTGRES_PASSWORD: ${KD_DB_ADMIN_PASSWORD:-cambiar_local}
+      KD_APP_PASSWORD: ${KD_APP_PASSWORD:-cambiar_app}
+      TZ: America/Monterrey
+    ports:
+      # 5433 y no 5432: si ya tienes PostgreSQL instalado en la laptop, no chocan
+      - "127.0.0.1:${KD_DB_PUERTO:-5433}:5432"
+    volumes:
+      - kd_datos:/var/lib/postgresql/data
+      # Solo corren la PRIMERA vez (base vacia), en orden alfabetico
+      - ./docs/modelo-datos/kennadent_esquema_v0.2.sql:/docker-entrypoint-initdb.d/00_esquema.sql:ro
+      - ./infra/local/db/10_usuario_app.sh:/docker-entrypoint-initdb.d/10_usuario_app.sh:ro
+      - ./infra/local/db/20_datos_demo.sql:/docker-entrypoint-initdb.d/20_datos_demo.sql:ro
+      # Pruebas y herramientas, para correrlas desde dentro: /kd/pruebas/...
+      - ./docs/modelo-datos/pruebas:/kd/pruebas:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: qa@kennadent.mx
+      PGADMIN_DEFAULT_PASSWORD: ${KD_PGADMIN_PASSWORD:-cambiar_pgadmin}
+      # Modo "escritorio": sin pantalla de inicio de sesion (solo local)
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_LISTEN_ADDRESS: 0.0.0.0
+    ports:
+      - "127.0.0.1:${KD_PGADMIN_PUERTO:-5050}:80"
+    volumes:
+      - kd_pgadmin:/var/lib/pgadmin
+      - ./infra/local/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    # El prototipo actual (HTML/CSS/JS). Todavia NO usa la base de datos:
+    # guarda en el navegador hasta que exista el backend.
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${KD_WEB_PUERTO:-8080}:80"
+    volumes:
+      # Solo lo publico del frontend (no se sirve docs/ ni .env)
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./css:/usr/share/nginx/html/css:ro
+      - ./js:/usr/share/nginx/html/js:ro
+      - ./assets:/usr/share/nginx/html/assets:ro
+
+volumes:
+  kd_datos:
+  kd_pgadmin:
