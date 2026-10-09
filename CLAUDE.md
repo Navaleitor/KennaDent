@@ -43,7 +43,7 @@
   - Actualizar `CHANGELOG.md`.
   - Actualizar la versión en el menú lateral (`index.html`, `.sidebar-pie`) y en el `README.md`.
   - Poner la versión en el título del PR.
-- **Bugs y mejoras** llegan como Issues de GitHub (hay plantillas en `.github/ISSUE_TEMPLATE`). El PR que lo arregla debe decir "Corrige #N" para que el Issue se cierre solo al hacer merge.
+- **Bugs y mejoras** llegan como Issues de GitHub (hay plantillas en `.github/ISSUE_TEMPLATE`). El PR que lo arregla debe decir **"Fixes #N"** (una línea por Issue): GitHub solo reconoce las palabras en inglés para cerrar el Issue solo al hacer merge.
 - **Antes de subir cambios**, probar en Chromium (Playwright ya está instalado) en computadora (~1366 px) y celular (~390 px), en modo día y noche:
   - que no haya errores de JavaScript;
   - que no haya scroll horizontal;
