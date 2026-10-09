@@ -6,6 +6,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 - El segundo número (**x**) sube con cada entrega grande; el tercero (**y**) con correcciones.
 - La **1.0.0** será la primera versión lista para usarse con clínicas reales.
 
+## [0.5.0] - 2026-10-09
+Base de datos real y backend. El prototipo sigue igual (guarda en el navegador) hasta que se conecten las pantallas nuevas.
+
+### Agregado
+- **Validación del modelo de datos** (`docs/modelo-datos/`): informe con pruebas reales en PostgreSQL 16 y propuesta de esquema v0.2 multiempresa.
+- **Backend Django 5.2 LTS + Django REST Framework** (`backend/`):
+  - las 36 tablas del modelo v0.2 como migraciones de Django, con llaves compuestas, triggers, vistas y Row Level Security; se comprobó que rechazan lo mismo que el esquema v0.2;
+  - cada petición se aísla por empresa en PostgreSQL (rol `kd_app`), sin depender de filtros en el código;
+  - API `/api/v1/`: inicio de sesión por clínica + usuario (o correo) con protección CSRF y límite de intentos, sucursales, personal, tipos de cita, tratamientos (precio solo con permiso "dinero"), pacientes (alta con expediente automático, búsqueda sin acentos, baja y bitácora de consulta) y agenda (sillón ocupado, doctor de otra sucursal y aviso de empalme);
+  - admin de plataforma para el equipo de KennaDent;
+  - 13 pruebas automáticas.
+- **Entorno local de pruebas (QA)** con Docker: PostgreSQL 16, backend, pgAdmin con las conexiones listas y el prototipo, todo en `localhost:8080`, con datos ficticios de dos empresas y sus usuarios. Guía en `docs/entorno-local.md`.
+
+### Decidido (se programa en las siguientes entregas)
+- Frontend nuevo en **React + TypeScript** dentro de este mismo repositorio; el prototipo se conserva como demo.
+- Reglas nuevas del negocio y de seguridad registradas en `docs/requisitos.md` (sección 6).
+
 ## [0.4.0] - 2026-10-08
 Nueva forma de agendar y registro de citas canceladas o eliminadas. Corrige los Issues #17, #18 y #19.
 

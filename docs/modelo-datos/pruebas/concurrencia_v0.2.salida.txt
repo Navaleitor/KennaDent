@@ -1,0 +1,12 @@
+pago 6 de 400; cajero A y cajero B aplican 300 cada uno a la vez
+-- cajero A:
+ pg_sleep 
+----------
+ 
+(1 row)
+
+-- cajero B:
+ERROR:  El pago 6 es de 400.00, ya tiene 300.00 aplicado; no alcanza para 300.00
+CONTEXT:  PL/pgSQL function tg_aplicacion_no_excede() line 9 at RAISE
+-- total aplicado al pago 6:
+300.00

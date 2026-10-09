@@ -1,0 +1,44 @@
+SET
+ setseed 
+---------
+ 
+(1 row)
+
+INSERT 0 5
+INSERT 0 15
+INSERT 0 90
+INSERT 0 30
+INSERT 0 45
+INSERT 0 65
+INSERT 0 75
+INSERT 0 50
+INSERT 0 150
+INSERT 0 100000
+INSERT 0 259500
+INSERT 0 220669
+INSERT 0 220669
+INSERT 0 202896
+INSERT 0 202896
+INSERT 0 31524
+INSERT 0 31524
+UPDATE 5200
+INSERT 0 15600
+INSERT 0 5047
+INSERT 0 5047
+INSERT 0 150
+INSERT 0 441338
+ANALYZE
+         tabla          | renglones 
+------------------------+-----------
+ inventario_movimiento  |    441488
+ cita                   |    259500
+ consulta_procedimiento |    220669
+ consulta               |    220669
+ pago                   |    207943
+ pago_aplicacion        |    207943
+ paciente               |    100000
+ plan_item              |     31524
+ presupuesto            |     31524
+ cuota                  |     15600
+(10 rows)
+

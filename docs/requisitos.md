@@ -50,8 +50,8 @@ Puestos incluidos:
 - **Prefijo Dr. / Dra.** según el sexo, automático para odontólogo, especialista e higienista (se puede activar o quitar por persona).
 - **Usuario y contraseña predeterminados** (Issue #6):
   - Usuario: `nombre.apellido` (ej. RICARDO NAVA CORTÉS → `ricardo.nava`). Si ya existe, se usa el segundo apellido (`ricardo.cortes`) y el sistema lo avisa.
-  - Contraseña: `nombreapellido` + 3 números al azar (ej. `ricardonava123`).
-  - El administrador puede consultarlos, copiarlos y generar una nueva contraseña. En producción se pedirá cambiarla al primer inicio de sesión.
+  - Contraseña: en el prototipo, `nombreapellido` + 3 números al azar (ej. `ricardonava123`). **Con el backend será al azar** (no adivinable) y se muestra solo al crearla o regenerarla (ver sección 6).
+  - El administrador puede copiarlos y generar una nueva contraseña. Con el backend ya no puede consultar la contraseña actual, porque se guarda cifrada.
 - **Permisos por casilla.** Cada puesto trae permisos sugeridos, que el administrador puede ajustar persona por persona.
 - **Baja** con fecha y motivo. La persona ya no puede entrar, pero su historial se conserva. Se puede reactivar.
 
@@ -76,7 +76,7 @@ Reglas de acceso acordadas (Issues #10 y #11):
 - **Nueva cita en orden** (#17): paciente → sucursal → doctor → tipo/tratamiento (da la duración) → fecha y hora (solo con el doctor libre y al menos una unidad libre) → unidad (solo las desocupadas). Cada paso se habilita al llenar el anterior.
 - **Cancelar o eliminar pide motivo** (#18): lista de motivos u "Otro" con texto. Se guarda quién y cuándo. Puede hacerlo quien edita la agenda. La cita sale de la agenda y queda en el historial del paciente con su motivo (#19).
 - Arriba de la agenda: vista (Día/Semana/Mes) a la izquierda, sucursal y doctor fijos a la derecha y las unidades en su propio renglón (#13).
-- No se permite empalmar dos citas en la misma unidad; si el doctor ya tiene otra cita se avisa.
+- No se permite empalmar dos citas en la misma unidad; si el doctor ya tiene otra cita **se avisa y quien agenda decide**. El aviso dice qué cita es: *"DRA. ANDREA GARZA LEAL ya tiene una cita de 10:00 a 10:50 (RESINA ESTÉTICA, JUAN PÉREZ) en UNIDAD 2"*.
 
 ### 2.4 Pacientes, resumen clínico e historial clínico
 - Alta con número de expediente automático (KD-00001…) y nombre en mayúsculas. Si lo da de alta recepción, al doctor le llega un aviso para completar **alergias y antecedentes**.
@@ -95,7 +95,8 @@ Reglas de acceso acordadas (Issues #10 y #11):
 ### 2.5 Presupuestos (gestión)
 - Documento con folio, tratamientos por pieza, cantidad, precio, descuento, forma de pago (contado o mensualidades) y notas. Se genera desde el odontograma o desde cero.
 - Flujo: borrador → enviado → aceptado → en tratamiento → completado · rechazado.
-- Agregar, editar, **eliminar**, imprimir y **exportar** (CSV).
+- Agregar, editar, imprimir y **exportar** (CSV).
+- **Eliminar solo borradores** que nunca se enviaron al paciente. Uno enviado, aceptado o rechazado se **cancela** con motivo (queda registrado quién y cuándo) y sus tratamientos regresan al plan del paciente. "Rechazado" = el paciente dijo que no; "cancelado" = la clínica lo retira. Un presupuesto con pagos aplicados no se cancela hasta devolver o reasignar ese dinero.
 - **Actividad reciente** del más antiguo al más reciente, sin los completados.
 
 ### 2.6 Caja
@@ -146,13 +147,47 @@ Reglas de acceso acordadas (Issues #10 y #11):
 - [ ] ¿La mensualidad se cobra por sucursal, por doctor o con un precio fijo?
 - [ ] Qué hacer cuando una cita no cabe en el espacio libre de la unidad (alerta, redondear la duración a bloques de 30 min o sugerir otra silla). Se decide después de más pruebas (#15).
 
+Decidido (octubre 2026): el backend será Django + PostgreSQL (ver sección 5).
+
 Decidido (septiembre 2026): la agenda es por unidad; el doctor ve solo su agenda y a todos los pacientes; solo gestión ve dinero; recepción no toca datos clínicos; "presupuestos" se queda con ese nombre.
 
 Decidido (octubre 2026): citas solo a las :00 y :30; no se agenda en el pasado; al eliminar **o** cancelar una cita se pide motivo, la cita desaparece de la agenda y queda en el historial del paciente; puede hacerlo quien edita la agenda (v0.4.0, #18 y #19).
 
+## 6. Decisiones de octubre 2026 (backend, seguridad y reglas)
+
+Acordadas al revisar el documento de seguridad, privacidad y reglas del negocio.
+
+**Cobro y presupuestos**
+- El paciente paga **al salir de la cita** lo que se le hizo. Lo que está en un presupuesto **a plazos** se cobra por mensualidad, no por cita.
+- Presupuestos: se eliminan solo los borradores; lo demás se cancela con motivo (ver 2.5).
+
+**Acceso**
+- **Inicio de sesión estándar para todos** (QA y producción): código de la clínica + usuario + contraseña. **Sin correos** (se quita la entrada por correo del backend).
+- Contraseña inicial al azar. Mientras no la cambie, la persona **no puede usar nada más** (igual cuando el administrador la regenera).
+- Contraseña olvidada: la regenera el administrador de la clínica.
+- La sesión se cierra tras **30 minutos sin uso**.
+- **"Acceso a todas las sucursales"** es un permiso: quien no lo tiene ve agenda, caja, inventario y reportes solo de las sucursales donde el administrador lo asignó. El **gerente** ve solo su sucursal en esos módulos; el directorio de pacientes sigue siendo de toda la empresa.
+- Cobertura: el administrador asigna, cambia o retira las sucursales de cada persona.
+- **Equipo de KennaDent:** puede ver expedientes de las clínicas para dar soporte, solo personas con nombre, y cada consulta de datos de una clínica queda registrada.
+
+**Bitácora del sistema** (distinta del historial clínico)
+- Registra entradas, quién vio o cambió qué paciente, cambios de permisos y correcciones de dinero.
+- La leen administradores y gerentes (el gerente, solo lo de su sucursal). Se guarda **5 años**.
+
+**Exportar expedientes**
+- Uno por uno: cualquiera con permiso de ver historial.
+- Todos a la vez: solo el administrador general, con segunda confirmación de contraseña, y siempre registrado en la bitácora.
+- Formato: un PDF por paciente, todos dentro de un ZIP.
+
+**Para después** (antes de producción)
+- Todo lo legal (aviso de privacidad, consentimiento firmado, contrato con cada clínica, plan ante incidentes), respaldos, proveedor y país de los datos, verificación en 2 pasos.
+- Condición: **ningún dato real de pacientes entra al sistema hasta cerrar lo legal.** En QA solo datos inventados.
+- Las medidas técnicas de seguridad (conexión cifrada, HTTPS, gestor de secretos) las define el equipo técnico.
+
 ## 5. Notas técnicas
 
 - **Prototipo actual:** HTML, CSS y JavaScript sin dependencias. Los datos son de ejemplo y se guardan en el navegador (`localStorage`), así que cada persona que lo abre ve su propia copia.
-- **Producción (recomendado):** Next.js y Supabase (PostgreSQL con *Row Level Security*, para que ninguna empresa pueda ver datos de otra), con autenticación real y respaldos.
+- **Producción (decidido, octubre 2026):** backend en **Django 5.2 LTS + Django REST Framework** sobre **PostgreSQL 16**, con *Row Level Security* para que ninguna empresa pueda ver datos de otra, autenticación real y respaldos. El frontend actual se conectará a la API (`/api/v1/`). Modelo de datos: `docs/modelo-datos/` (validación y propuesta v0.2, ya implementada como migraciones de Django en `backend/`).
+- **Inicio de sesión:** código de la clínica + usuario (`demo` / `andrea.garza`) o correo. Pendiente de confirmar cuál se muestra en la pantalla de entrada.
 - **Datos de salud:** cumplir con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, NOM-004-SSA3-2012 (expediente clínico) y NOM-024-SSA3-2012 (sistemas de información de registro electrónico para la salud). Esto incluye aviso de privacidad, cifrado y bitácora de quién consulta cada expediente.
 - **Contraseñas:** en el prototipo se guardan tal cual para que el administrador las vea (Issue #6). En producción deben guardarse cifradas (*hash*); el administrador solo verá la contraseña inicial al crearla o regenerarla, y el empleado la cambiará al entrar por primera vez.
