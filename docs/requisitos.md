@@ -73,6 +73,8 @@ Reglas de acceso acordadas (Issues #10 y #11):
 - **Arrastrar** una cita para cambiarla de hora o de unidad; **estirar** desde abajo para cambiar la duración. Cancelar o eliminar libera el espacio.
 - La hora se elige de una lista **cada 30 minutos (solo :00 y :30)** que marca los horarios ocupados de la unidad (Issues #3, #9 y #15). Arrastrar una cita también la acomoda a :00 o :30. Las duraciones no cambian (15, 45, 75 min… siguen existiendo).
 - **No se agenda en el pasado:** no se puede crear ni mover una cita a un día u hora que ya pasó (#14). Los días pasados se siguen viendo con todas sus citas; la parte que ya pasó se ve rayada.
+- **Nueva cita en orden** (#17): paciente → sucursal → doctor → tipo/tratamiento (da la duración) → fecha y hora (solo con el doctor libre y al menos una unidad libre) → unidad (solo las desocupadas). Cada paso se habilita al llenar el anterior.
+- **Cancelar o eliminar pide motivo** (#18): lista de motivos u "Otro" con texto. Se guarda quién y cuándo. Puede hacerlo quien edita la agenda. La cita sale de la agenda y queda en el historial del paciente con su motivo (#19).
 - Arriba de la agenda: vista (Día/Semana/Mes) a la izquierda, sucursal y doctor fijos a la derecha y las unidades en su propio renglón (#13).
 - No se permite empalmar dos citas en la misma unidad; si el doctor ya tiene otra cita **se avisa y quien agenda decide**. El aviso dice qué cita es: *"DRA. ANDREA GARZA LEAL ya tiene una cita de 10:00 a 10:50 (RESINA ESTÉTICA, JUAN PÉREZ) en UNIDAD 2"*.
 

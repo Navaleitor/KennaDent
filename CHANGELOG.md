@@ -23,6 +23,23 @@ Base de datos real y backend. El prototipo sigue igual (guarda en el navegador) 
 - Frontend nuevo en **React + TypeScript** dentro de este mismo repositorio; el prototipo se conserva como demo.
 - Reglas nuevas del negocio y de seguridad registradas en `docs/requisitos.md` (sección 6).
 
+## [0.4.0] - 2026-10-08
+Nueva forma de agendar y registro de citas canceladas o eliminadas. Corrige los Issues #17, #18 y #19.
+
+### Agregado
+- **Nueva cita paso a paso** (#17):
+  - orden: paciente → sucursal → doctor → tipo de cita y tratamiento → fecha y hora → unidad; cada paso se habilita al llenar el anterior;
+  - la duración sale del tipo de cita o del tratamiento;
+  - solo se ofrecen horarios en que el doctor está libre toda la cita (también en otras sucursales) y queda al menos una unidad libre; cada hora dice cuántas unidades quedan;
+  - la unidad solo ofrece sillones desocupados durante toda la cita;
+  - si el doctor no tiene horarios libres ese día, lo avisa y sugiere otra fecha u otro doctor.
+- **Motivo al cancelar o eliminar** (#18): se elige de una lista ("El paciente canceló", "Reagendada por la clínica", "Error de captura"…) o se escribe en "Otro". Se guarda quién lo hizo y cuándo. Aplica al botón del detalle, al bote de basura y al selector de estado en la agenda; si se cierra la ventana sin confirmar, la cita no cambia.
+- **Historial del paciente** (#19): la pestaña "Citas" muestra también las citas eliminadas (marcadas como "Eliminada") y, en las canceladas y eliminadas, el motivo, quién y cuándo. El resumen clínico muestra el motivo de las canceladas.
+
+### Cambiado
+- La cita cancelada o eliminada desaparece de la agenda y libera la unidad.
+- Los datos de ejemplo incluyen motivos en las citas canceladas y algunas citas eliminadas. La demo se vuelve a generar (`kennadent-demo-v5`).
+
 ## [0.3.1] - 2026-10-06
 Correcciones de la Agenda de la revisión de la v0.3.0. Corrige los Issues #13 al #16.
 

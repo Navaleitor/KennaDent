@@ -96,6 +96,35 @@ KD.confirmar = (titulo, mensaje, textoBoton, onOk, peligro = true) => {
   m.querySelector("[data-ok]").addEventListener("click", () => { KD.cerrarModal(); onOk(); });
 };
 
+// Pide el motivo antes de cancelar o eliminar algo (#18): se elige uno de la lista o se escribe otro
+KD.pedirMotivo = ({ titulo, mensaje, boton, onOk, motivos = KD.MOTIVOS_BAJA_CITA }) => {
+  const m = KD.modal({
+    titulo,
+    cuerpo: `<p style="margin:0 0 14px">${mensaje}</p>
+      <form class="form-grid" novalidate>
+        <fieldset class="full motivos checks"><legend>Motivo <em>*</em></legend>
+          ${motivos.map((x) => `<label><input type="radio" name="motivo" value="${KD.esc(x)}"> ${KD.esc(x)}</label>`).join("")}
+        </fieldset>
+        <label class="campo full"><span>Detalle <span class="muted" data-det-ayuda>(opcional)</span></span><textarea name="detalle" rows="2" placeholder="Ej. el paciente avisó por WhatsApp que tiene un viaje"></textarea></label>
+        <p class="full nota-form bad" data-aviso hidden></p>
+      </form>`,
+    acciones: `<button class="btn btn-ghost" data-cerrar>Regresar</button><button class="btn btn-danger" data-ok>${KD.esc(boton)}</button>`,
+  });
+  const f = m.querySelector("form");
+  const otro = () => f.motivo.value === "Otro";
+  f.addEventListener("change", () => { m.querySelector("[data-det-ayuda]").textContent = otro() ? "(obligatorio)" : "(opcional)"; });
+  m.querySelector("[data-ok]").addEventListener("click", () => {
+    const motivo = f.motivo.value, detalle = f.detalle.value.trim();
+    const aviso = m.querySelector("[data-aviso]");
+    const error = !motivo ? "Elige el motivo." : otro() && !detalle ? "Escribe el motivo en el detalle." : "";
+    if (error) { aviso.innerHTML = `${KD.icon("alerta", 16)} <span>${error}</span>`; aviso.hidden = false; return; }
+    KD.cerrarModal();
+    onOk(otro() ? detalle : detalle ? `${motivo} · ${detalle}` : motivo);
+  });
+};
+// "Motivo · por quién · cuándo" de una cita cancelada o eliminada
+KD.textoBaja = (b) => `${KD.esc(b.motivo || "Sin motivo registrado")}${b.usuarioId ? ` <span class="muted">· ${KD.esc(KD.nombreUsuario(b.usuarioId))} · ${KD.esc(KD.fmtFecha(b.fecha))} ${b.hora || ""}</span>` : ""}`;
+
 // ---------- Menú contextual "⋯" ----------
 KD.cerrarPopover = () => document.querySelectorAll(".popover").forEach((p) => p.remove());
 KD.popover = (ancla, opciones) => {
@@ -154,18 +183,6 @@ KD.validar = (form) => {
 };
 KD.opciones = (lista, sel, valor = "id", texto = "nombre") =>
   lista.map((x) => `<option value="${KD.esc(x[valor])}" ${String(x[valor]) === String(sel) ? "selected" : ""}>${KD.esc(x[texto])}</option>`).join("");
-// Horarios cada 15 minutos para elegir la hora de una cita (corrige los Issues #3 y #9)
-// Opciones de hora a partir de una lista de minutos del día (ej. 600 = 10:00)
-KD.opcionesHora = (sel, minutos, ocupadas = new Set()) => {
-  const out = [];
-  for (const t of minutos) {
-    const h = KD.aHora(t);
-    const txt = new Date(2000, 0, 1, Math.floor(t / 60), t % 60).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" });
-    out.push(`<option value="${h}" ${h === sel ? "selected" : ""}>${txt}${ocupadas.has(h) ? " · ocupado" : ""}</option>`);
-  }
-  return out.join("");
-};
-
 // ---------- Piezas visuales ----------
 KD.badge = (texto, tipo = "") => `<span class="badge ${tipo}">${KD.esc(texto)}</span>`;
 KD.punto = (texto, tipo = "") => `<span class="estado-pill ${tipo}"><i></i>${KD.esc(texto)}</span>`;

@@ -7,7 +7,7 @@
 
 ## Estado actual
 - Prototipo navegable de la **Fase 1**: HTML, CSS y JavaScript sin dependencias ni compilación, publicado con GitHub Pages desde `main`.
-- Los datos son de ejemplo (`js/data.js`) y se guardan en `localStorage` en formato por columnas (`empacar`/`desempacar`) para caber en ~2.5 MB (límite de Safari en iPad). Si cambia la estructura de los datos, subir `STORAGE_KEY` (hoy `kennadent-demo-v4`) y agregar la anterior a `LLAVES_VIEJAS`.
+- Los datos son de ejemplo (`js/data.js`) y se guardan en `localStorage` en formato por columnas (`empacar`/`desempacar`) para caber en ~2.5 MB (límite de Safari en iPad). Si cambia la estructura de los datos, subir `STORAGE_KEY` (hoy `kennadent-demo-v5`) y agregar la anterior a `LLAVES_VIEJAS`.
 - Los campos vacíos (`""`) no se guardan: al leer, tratarlos como opcionales (`KD.esc` ya acepta `undefined`).
 - Los scripts son clásicos (no módulos ES) para que funcione abriendo `index.html` con doble clic. Todo cuelga de `window.KD`.
 - Todo texto que venga de datos se escapa con `KD.esc()` antes de meterlo en `innerHTML`.
@@ -32,6 +32,8 @@
 - **Nombres en mayúsculas** (pacientes, personal, tratamientos): usar `KD.mayus()` al guardar. Personal clínico con `titulo` lleva "DR." / "DRA." según el sexo (`KD.nombrePersona`).
 - **Dinero** solo con el permiso `dinero` (`KD.verDinero()`): no mostrar precios, montos ni ingresos sin él.
 - La agenda es **por unidad** (sillón): nunca dos citas en la misma unidad a la vez (`choqueCita`). Sin `agenda_todas`, el usuario ve solo sus citas.
+- Al **cancelar o eliminar** una cita se pide motivo (`KD.pedirMotivo`) y se guarda quién y cuándo. La cancelada queda en `citas` con `cancelacion`; la eliminada pasa a `citasEliminadas` con `eliminacion`. Las dos salen de la agenda y se ven en el historial del paciente.
+- Al crear una cita solo se ofrecen horarios a las :00 y :30 (`AG_PASO`), sin pasado, con el doctor libre y al menos una unidad libre.
 - La consulta solo la registra el doctor de la cita, ese día (`KD.puedeRegistrar`). Recepción no toca datos clínicos (`clinico_editar`).
 - Odontograma: rojo = por tratar, azul = realizado. Lo realizado en una consulta pasa a azul (`KD.odontoRealizado`).
 - Inventario: la proyección es de una semana, de miércoles a martes (`KD.cicloInventario`).

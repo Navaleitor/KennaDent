@@ -2,8 +2,8 @@
 // En producción esto se reemplaza por una base de datos (ver docs/requisitos.md).
 window.KD = window.KD || {};
 
-const STORAGE_KEY = "kennadent-demo-v4";
-const LLAVES_VIEJAS = ["kennadent-demo-v1", "kennadent-demo-v2", "kennadent-demo-v3"];
+const STORAGE_KEY = "kennadent-demo-v5";
+const LLAVES_VIEJAS = ["kennadent-demo-v1", "kennadent-demo-v2", "kennadent-demo-v3", "kennadent-demo-v4"];
 
 // ---------- Utilidades de fecha y texto ----------
 const pad = (n) => String(n).padStart(2, "0");
@@ -195,7 +195,7 @@ function generarDemo() {
   }
 
   const doctores = personal.filter((u) => KD.puesto(u.puesto).atiende);
-  const citas = [], consultas = [], planes = [], presupuestos = [];
+  const citas = [], consultas = [], planes = [], presupuestos = [], citasEliminadas = [];
   const trat = (id) => tratamientos.find((t) => t.id === id);
   const precio = (id) => Math.round(trat(id).precio * (0.95 + r() * 0.1) / 50) * 50;
   const PIEZA = ["t5", "t6", "t7", "t8", "t9", "t10", "t12"];
@@ -270,6 +270,12 @@ function generarDemo() {
           if (tratamientoId) cita.tratamientoId = tratamientoId;
           if (piezas) cita.piezas = piezas;
           if (planId) cita.planId = planId;
+          // Las canceladas llevan motivo; algunas se eliminaron de la agenda y solo quedan en el historial (#18, #19)
+          if (estado === "cancelada") {
+            const baja = { motivo: pick(KD.MOTIVOS_BAJA_CITA.slice(0, -1)), usuarioId: recepcionDe[suc.id], fecha: KD.sumarDias(fecha, -entre(0, 3)), hora: KD.aHora(entre(9, 18) * 60) };
+            if (r() < 0.2) { citasEliminadas.push({ ...cita, id: `ce${citasEliminadas.length + 1}`, eliminacion: baja }); t = Math.ceil((t + dur) / 30) * 30; continue; }
+            cita.cancelacion = baja;
+          }
           citas.push(cita);
 
           if (estado === "atendida") {
@@ -360,7 +366,7 @@ function generarDemo() {
     }
   }
   const db = {
-    version: 3, creado: hoy, empresa, sucursales, tratamientos, tiposCita, personal, pacientes, citas, consultas, planes, presupuestos,
+    version: 3, creado: hoy, empresa, sucursales, tratamientos, tiposCita, personal, pacientes, citas, citasEliminadas, consultas, planes, presupuestos,
     movimientos, cortes: [], productos, solicitudes: [], movInventario: [], tareas: [], seguimientoHecho: {},
     sesion: { usuarioId: "u1", sucursalId: "todas" },
   };
@@ -432,7 +438,7 @@ KD.cargar = () => {
   try {
     LLAVES_VIEJAS.forEach((k) => localStorage.removeItem(k));
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) { KD.db = desempacar(JSON.parse(raw)); KD.invalidar(); return; }
+    if (raw) { KD.db = desempacar(JSON.parse(raw)); KD.db.citasEliminadas ||= []; KD.invalidar(); return; }
   } catch (e) { /* sin almacenamiento disponible */ }
   KD.db = generarDemo();
   KD.guardar();
@@ -503,6 +509,7 @@ KD.doctores = (sucIds) => KD.db.personal.filter((u) => u.activo && KD.puesto(u.p
 
 KD.consultaDeCita = (citaId) => indices().consultaPorCita.get(citaId);
 KD.citasPaciente = (pid) => indices().citasPorPac.get(pid) || [];
+KD.citasEliminadasPaciente = (pid) => (KD.db.citasEliminadas || []).filter((c) => c.pacienteId === pid);
 KD.consultasPaciente = (pid) => indices().consultasPorPac.get(pid) || [];
 KD.planesPaciente = (pid) => indices().planesPorPac.get(pid) || [];
 KD.totalConsulta = (c) => c.procedimientos.reduce((s, p) => s + (p.precio || 0), 0);
@@ -667,6 +674,8 @@ KD.notificaciones = () => {
   return out;
 };
 
+// Motivos para cancelar o eliminar una cita (#18). "Otro" pide escribirlo.
+KD.MOTIVOS_BAJA_CITA = ["El paciente canceló", "El paciente reagendará", "Reagendada por la clínica", "El doctor no está disponible", "Error de captura", "Otro"];
 KD.ESTADOS_CITA = {
   programada: "Por confirmar", confirmada: "Confirmada", en_sala: "En sala de espera",
   atendida: "Atendida", no_asistio: "No asistió", cancelada: "Cancelada",
