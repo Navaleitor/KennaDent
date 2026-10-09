@@ -171,6 +171,7 @@ function tabClinico(panel, p) {
         return `<div class="evolucion">${cuadroFecha(c.fecha)}<div class="ev-txt">
           <strong>${KD.esc(KD.tratamientoCita(c))}${c.piezas ? ` · pieza(s) ${KD.esc(c.piezas)}` : ""}</strong> ${KD.badgeEstadoCita(c.estado)} ${sinReg ? KD.badge("Falta registro del doctor", "bad") : ""}
           <div class="ev-meta">${c.hora} · Unidad ${c.unidad || 1} · Sucursal ${KD.esc(KD.nombreSuc(c.sucursalId))} · <span class="color-punto" style="--c:${KD.colorUsuario(c.doctorId)}"></span>${KD.esc(KD.nombreUsuario(c.doctorId))}</div>
+          ${c.cancelacion ? `<div class="ev-meta">Motivo: ${KD.textoBaja(c.cancelacion)}</div>` : ""}
           ${cons ? detalleConsulta(cons) : ""}
           ${KD.puedeRegistrar(c) ? `<button class="btn btn-sm" style="margin-top:10px" data-registrar="${c.id}">${KD.icon("presupuestos", 15)} Registrar consulta</button>` : ""}
         </div></div>`;
@@ -398,20 +399,23 @@ function tabPagos(panel, p) {
 }
 
 // ---------- Citas ----------
+// Incluye las citas eliminadas de la agenda con su motivo (#19)
 function tabCitas(panel, p) {
-  const citas = KD.citasPaciente(p.id).slice().sort((a, b) => (b.fecha + b.hora).localeCompare(a.fecha + a.hora));
-  const n = (e) => citas.filter((c) => c.estado === e).length;
+  const eliminadas = KD.citasEliminadasPaciente(p.id);
+  const citas = KD.citasPaciente(p.id).concat(eliminadas).sort((a, b) => (b.fecha + b.hora).localeCompare(a.fecha + a.hora));
+  const n = (e) => citas.filter((c) => !c.eliminacion && c.estado === e).length;
   panel.innerHTML = `
-    ${KD.seccion("Historial de citas", `${citas.length} citas agendadas · ${n("atendida")} asistió · ${n("no_asistio")} no asistió`,
+    ${KD.seccion("Historial de citas", `${citas.length - eliminadas.length} citas agendadas · ${n("atendida")} asistió · ${n("no_asistio")} no asistió · ${n("cancelada")} ${n("cancelada") === 1 ? "cancelada" : "canceladas"} · ${eliminadas.length} ${eliminadas.length === 1 ? "eliminada" : "eliminadas"}`,
       KD.puede("agenda_editar") && p.activo ? `<button class="btn" data-cita>${KD.icon("agenda", 16)} Agendar cita</button>` : "")}
     <section class="card">${citas.length ? `<div class="tabla-wrap"><table class="responsive">
       <thead><tr><th>Fecha</th><th>Tipo / tratamiento</th><th>Doctor</th><th>Unidad</th><th>Estado</th></tr></thead>
-      <tbody>${citas.map((c) => `<tr class="clic" data-cita-id="${c.id}">
+      <tbody>${citas.map((c) => `<tr ${c.eliminacion ? 'class="eliminada"' : `class="clic" data-cita-id="${c.id}"`}>
         <td class="principal-celda"><strong>${KD.esc(KD.fmtFecha(c.fecha))}</strong> <span class="muted">${c.hora}</span></td>
         <td data-l="Tipo">${KD.esc(KD.tratamientoCita(c))}${c.piezas ? ` <span class="muted">· ${KD.esc(c.piezas)}</span>` : ""}</td>
         <td data-l="Doctor"><span class="color-punto" style="--c:${KD.colorUsuario(c.doctorId)}"></span> ${KD.esc(KD.nombreUsuario(c.doctorId))}</td>
         <td data-l="Unidad">U${c.unidad || 1} · ${KD.esc(KD.nombreSuc(c.sucursalId))}</td>
-        <td data-l="Estado">${KD.badgeEstadoCita(c.estado)}</td>
+        <td data-l="Estado">${c.eliminacion ? KD.punto("Eliminada", "cita-eliminada") : KD.badgeEstadoCita(c.estado)}
+          ${c.eliminacion || c.cancelacion ? `<small class="motivo-baja">${KD.textoBaja(c.eliminacion || c.cancelacion)}</small>` : ""}</td>
       </tr>`).join("")}</tbody></table></div>` : KD.vacio("Sin citas registradas.", "agenda")}</section>`;
   panel.querySelectorAll("[data-cita-id]").forEach((tr) => tr.addEventListener("click", () => KD.detalleCita(tr.dataset.citaId)));
   panel.querySelector("[data-cita]")?.addEventListener("click", () => KD.formCita({ pacienteId: p.id, sucursalId: KD.sucursalUnica() }));
