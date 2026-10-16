@@ -6,6 +6,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 - El segundo número (**x**) sube con cada entrega grande; el tercero (**y**) con correcciones.
 - La **1.0.0** será la primera versión lista para usarse con clínicas reales.
 
+## [0.5.1] - 2026-10-16
+Primeros agentes de revisión. No cambia nada de las pantallas ni del backend.
+
+### Agregado
+- **Agentes de revisión** en `.claude/agents/`, para correr antes de cada pull request. Solo reportan con semáforo (🔴 bloquea, 🟡 conviene arreglar, 🟢 sin hallazgos); nunca corrigen código, abren PRs ni los unen:
+  - `reglas-negocio`: compara los cambios contra las reglas de `docs/requisitos.md` y `CLAUDE.md`, señala archivo y línea de cada choque y lista las decisiones que falte anotar. Solo puede leer.
+  - `qa-backend`: corre las 13 pruebas de la API y las pruebas SQL del modelo (`pruebas_django.sql`, 27 rechazos esperados) en el entorno de Docker. La verificación de migraciones desde cero solo si se le pide.
+- `CLAUDE.md` y `docs/requisitos.md` explican cuándo se usan.
+
 ## [0.5.0] - 2026-10-09
 Base de datos real y backend. El prototipo sigue igual (guarda en el navegador) hasta que se conecten las pantallas nuevas.
 

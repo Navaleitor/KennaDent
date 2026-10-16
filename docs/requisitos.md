@@ -153,6 +153,8 @@ Decidido (septiembre 2026): la agenda es por unidad; el doctor ve solo su agenda
 
 Decidido (octubre 2026): citas solo a las :00 y :30; no se agenda en el pasado; al eliminar **o** cancelar una cita se pide motivo, la cita desaparece de la agenda y queda en el historial del paciente; puede hacerlo quien edita la agenda (v0.4.0, #18 y #19).
 
+Decidido (octubre 2026): antes de cada pull request se corren dos **agentes de revisión** que solo reportan con semáforo y nunca corrigen ni unen (v0.5.1): `reglas-negocio` revisa que los cambios respeten las reglas de este documento y de `CLAUDE.md` (un 🔴 bloquea el PR) y `qa-backend` corre las pruebas automáticas del backend y del modelo de datos. Están en `.claude/agents/`.
+
 ## 6. Decisiones de octubre 2026 (backend, seguridad y reglas)
 
 Acordadas al revisar el documento de seguridad, privacidad y reglas del negocio.
