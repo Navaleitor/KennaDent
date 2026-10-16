@@ -1,0 +1,145 @@
+SET
+SET
+SET
+Timing is on.
+== C1. Ventas y produccion por doctor en septiembre 2026, separando cuando cubrio otra sucursal
+   doctor    | sucursal_donde_atendio | cubriendo | consultas | produccion 
+-------------+------------------------+-----------+-----------+------------
+ PERSONA 1-1 | SUC 1                  | f         |       229 |  525700.00
+ PERSONA 1-1 | SUC 2                  | t         |         9 |   16700.00
+ PERSONA 1-2 | SUC 1                  | f         |       217 |  525350.00
+ PERSONA 1-2 | SUC 2                  | t         |         8 |   16650.00
+ PERSONA 1-3 | SUC 2                  | f         |       213 |  484900.00
+ PERSONA 1-3 | SUC 3                  | t         |        10 |   28000.00
+ PERSONA 1-4 | SUC 2                  | f         |       218 |  505400.00
+ PERSONA 1-4 | SUC 3                  | t         |         9 |   16450.00
+ PERSONA 1-5 | SUC 3                  | f         |       216 |  498550.00
+ PERSONA 1-6 | SUC 3                  | f         |       217 |  506600.00
+(10 rows)
+
+Time: 108.427 ms
+-- C1b. Presupuestado y tasa de aceptacion por doctor (como KD.metricas)
+   doctor    | presupuestado | decididos | tasa_aceptacion 
+-------------+---------------+-----------+-----------------
+ PERSONA 1-2 |     484500.00 |       240 |            0.63
+ PERSONA 1-6 |     448500.00 |       220 |            0.66
+ PERSONA 1-1 |     447000.00 |       220 |            0.64
+ PERSONA 1-4 |     433500.00 |       222 |            0.66
+ PERSONA 1-3 |     423000.00 |       201 |            0.62
+ PERSONA 1-5 |     400500.00 |       197 |            0.71
+(6 rows)
+
+Time: 6.923 ms
+== C2. Ingresos por sucursal y metodo de pago, septiembre 2026 (dia local de cada sucursal)
+ sucursal |    metodo     |  ingresos  
+----------+---------------+------------
+ SUC 1    | efectivo      |  304150.00
+ SUC 1    | tarjeta       |  361650.00
+ SUC 1    | transferencia |  307800.00
+ SUC 1    |               |  973600.00
+ SUC 2    | efectivo      |  294550.00
+ SUC 2    | tarjeta       |  339150.00
+ SUC 2    | transferencia |  309950.00
+ SUC 2    |               |  943650.00
+ SUC 3    | efectivo      |  322950.00
+ SUC 3    | tarjeta       |  303900.00
+ SUC 3    | transferencia |  330050.00
+ SUC 3    |               |  956900.00
+          |               | 2874150.00
+(13 rows)
+
+Time: 38.513 ms
+== C3. Saldo pendiente por paciente (consultas no cobradas + presupuestos aceptados), top 5
+ expediente |  saldo   
+------------+----------
+ KD-02128   | 10650.00
+ KD-02836   | 10150.00
+ KD-00160   |  9650.00
+ KD-08105   |  9650.00
+ KD-03776   |  9600.00
+(5 rows)
+
+Time: 392.122 ms
+-- C3b. Cuotas vencidas
+ presupuesto_id | numero |   vence    | monto  | pagado 
+----------------+--------+------------+--------+--------
+             33 |      2 | 2024-03-02 | 500.00 |      0
+             33 |      3 | 2024-04-01 | 500.00 |      0
+             84 |      2 | 2024-03-03 | 500.00 |      0
+             84 |      3 | 2024-04-02 | 500.00 |      0
+             99 |      2 | 2024-03-03 | 500.00 |      0
+(5 rows)
+
+Time: 13.517 ms
+== C4. Existencia por sucursal (con estado de stock) y movimientos de septiembre
+ sucursal |  material  | existencia | minimo  | estado 
+----------+------------+------------+---------+--------
+ SUC 1    | MATERIAL 1 |  20642.000 | 200.000 | ok
+ SUC 1    | MATERIAL 2 |  20642.000 | 200.000 | ok
+ SUC 2    | MATERIAL 1 |  20370.000 | 200.000 | ok
+ SUC 2    | MATERIAL 2 |  20370.000 | 200.000 | ok
+ SUC 3    | MATERIAL 1 |  20508.000 | 200.000 | ok
+ SUC 3    | MATERIAL 2 |  20508.000 | 200.000 | ok
+(6 rows)
+
+Time: 38.684 ms
+ sucursal_id | motivo  |  tipo  | movimientos | cantidad 
+-------------+---------+--------+-------------+----------
+           1 | consumo | salida |         892 | 1784.000
+           2 | consumo | salida |         896 | 1792.000
+           3 | consumo | salida |         904 | 1808.000
+(3 rows)
+
+Time: 22.435 ms
+== C5. Ocupacion de la agenda por sillon, septiembre 2026 (minutos agendados / minutos abiertos)
+ sucursal |  sillon  | ocupacion_pct 
+----------+----------+---------------
+ SUC 1    | SILLON 1 |          73.4
+ SUC 1    | SILLON 2 |          69.6
+ SUC 2    | SILLON 1 |          71.2
+ SUC 2    | SILLON 2 |          72.4
+ SUC 3    | SILLON 1 |          72.4
+ SUC 3    | SILLON 2 |          72.4
+(6 rows)
+
+Time: 19.482 ms
+-- C5b. Ocupacion por doctor (horas atendidas en septiembre)
+   nombre    | horas 
+-------------+-------
+ PERSONA 1-1 | 198.3
+ PERSONA 1-2 | 187.5
+ PERSONA 1-3 | 185.8
+ PERSONA 1-4 | 189.2
+ PERSONA 1-5 | 180.0
+ PERSONA 1-6 | 180.8
+(6 rows)
+
+Time: 2.208 ms
+== C6. Historial completo de un paciente (linea de tiempo)
+         fecha          |     tipo      |        detalle         
+------------------------+---------------+------------------------
+ 2026-04-14 15:00:00+00 | cita          | atendida
+ 2026-04-14 15:50:00+00 | consulta      |  
+ 2026-04-14 15:50:00+00 | procedimiento | TRATAMIENTO 5 $1550.00
+(3 rows)
+
+Time: 12.298 ms
+== C7. Pacientes con tratamiento ACEPTADO pero no terminado y sin cita futura
+ expediente | pendientes |   desde    
+------------+------------+------------
+ KD-09156   |          2 | 2024-02-13
+ KD-18190   |          2 | 2024-03-15
+ KD-18589   |          2 | 2024-04-01
+ KD-18850   |          2 | 2024-04-13
+ KD-11687   |          2 | 2024-04-25
+(5 rows)
+
+Time: 17.525 ms
+ total_pacientes_con_pendientes 
+--------------------------------
+                           1243
+(1 row)
+
+Time: 5.588 ms
+Timing is off.
+RESET

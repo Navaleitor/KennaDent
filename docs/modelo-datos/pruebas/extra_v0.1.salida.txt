@@ -1,0 +1,75 @@
+SET
+== X1: T4 corregida. La T4 original falla por llave primaria duplicada, no por la regla de "una sola base". Prueba real de la regla:
+psql:extra_v0.1.sql:5: ERROR:  duplicate key value violates unique constraint "ux_trabajador_una_base"
+DETAIL:  Key (trabajador_id)=(1) already exists.
+== X2: saldo despues de T9 (se aplicaron 9999 de un pago de 400)
+ presupuesto_id | paciente_id | total  |  pagado  |  saldo   
+----------------+-------------+--------+----------+----------
+              1 |           1 | 650.00 | 10324.00 | -9674.00
+(1 row)
+
+== X3: cuota de OTRO presupuesto aplicada a este (deberia fallar)
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+== X4: pago de un paciente aplicado al presupuesto de OTRO paciente (deberia fallar)
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+== X5: saldo de un presupuesto RECHAZADO (no deberia contar como deuda)
+UPDATE 1
+INSERT 0 1
+ presupuesto_id | paciente_id | total  | pagado | saldo  
+----------------+-------------+--------+--------+--------
+              2 |           1 | 500.00 |      0 | 500.00
+(1 row)
+
+== X6: el mismo doctor en DOS sillones a la misma hora. El frontend lo permite con aviso; v0.1 lo prohibe:
+INSERT 0 1
+psql:extra_v0.1.sql:29: ERROR:  conflicting key value violates exclusion constraint "cita_sin_empalme_doctor"
+DETAIL:  Key (trabajador_id, tstzrange(inicio, fin))=(1, ["2026-10-01 16:15:00+00","2026-10-01 16:45:00+00")) conflicts with existing key (trabajador_id, tstzrange(inicio, fin))=(1, ["2026-10-01 16:00:00+00","2026-10-01 17:00:00+00")).
+== X7: pieza 20 no existe en FDI (deberia fallar)
+INSERT 0 1
+== X8: MULTIEMPRESA. Segunda empresa (otro negocio cliente)
+INSERT 0 1
+INSERT 0 1
+-- X8a: la otra empresa no puede tener su tratamiento "Limpieza" (UNIQUE global):
+psql:extra_v0.1.sql:38: ERROR:  duplicate key value violates unique constraint "tratamiento_nombre_key"
+DETAIL:  Key (nombre)=(Limpieza) already exists.
+-- X8b: ni su material "Guantes":
+psql:extra_v0.1.sql:40: ERROR:  duplicate key value violates unique constraint "material_nombre_key"
+DETAIL:  Key (nombre)=(Guantes) already exists.
+-- X8c: ni un usuario "andrea":
+psql:extra_v0.1.sql:42: ERROR:  duplicate key value violates unique constraint "trabajador_usuario_key"
+DETAIL:  Key (usuario)=(andrea) already exists.
+-- X8d: un trabajador de la empresa 1 asignado a la sucursal de la empresa 2 (deberia fallar):
+INSERT 0 1
+-- X8e: a que empresa pertenece el paciente 1? (no hay forma de saberlo):
+ column_name 
+-------------
+(0 rows)
+
+-- X8f: tablas SIN empresa_id ni camino directo a sucursal:
+      table_name      
+----------------------
+ catalogo_hallazgo
+ cita
+ cuota
+ empresa
+ material
+ nota_clinica
+ odontograma_hallazgo
+ paciente
+ pago_aplicacion
+ presupuesto_detalle
+ rol
+ rol_permiso
+ trabajador
+ tratamiento
+ tratamiento_material
+(15 rows)
+
+== X9: borrar un paciente con citas (la FK lo impide, pero uno sin citas se borra fisicamente):
+INSERT 0 1
+DELETE 1
