@@ -24,17 +24,20 @@
 | Tipos de la API | **Generados** desde el esquema OpenAPI de Django (`drf-spectacular` → `openapi-typescript`) | El frontend y la API nunca se desalinean; no se escriben a mano |
 | Componentes base | **Radix UI** (solo primitivas sin estilo: diálogos, menús, pestañas) | Accesibilidad y teclado resueltos, con el estilo propio de KennaDent |
 | Estilos | **CSS propio** con los tokens de `css/app.css` (colores, modo noche) en **CSS Modules** | Mantiene el estilo de Kenia; sin librerías visuales que lo cambien |
+| Letra | **Manrope** servida desde el propio sistema (`@fontsource/manrope`), no desde Google Fonts | Ninguna pantalla con datos de salud le avisa a un tercero quién la abre (decidido en la F0) |
 | Fechas | `Intl` del navegador + zona horaria de la sucursal | Horas correctas aunque haya sucursales en otras zonas |
 | Pruebas | **Vitest + Testing Library** (componentes) y **Playwright** (flujos completos contra el entorno de QA) | Cada PR se prueba solo |
 | Calidad | ESLint, Prettier y revisión de tipos en GitHub Actions | Nada se une a `main` si no compila o falla una prueba |
 
-Las versiones exactas se fijan en `frontend/package.json` al crear el proyecto (la estable vigente) y se actualizan en PRs propios.
+Las versiones exactas se fijan en `frontend/package.json` al crear el proyecto (la estable vigente) y se actualizan en PRs propios. En la F0 (octubre de 2026): React 19.3, Vite 8.3, React Router 8.4, TanStack Query 5, React Hook Form 7 + Zod 4, Radix (menú desplegable), Vitest 5 y Playwright 1.64. **TypeScript 6.0**: la 7 acababa de salir y las herramientas de ESLint para TypeScript todavía no la aceptan; se sube en un PR propio cuando la acepten.
 
 ## 2. Dónde vive y cómo corre
 
 - **Carpeta:** `frontend/`, en este mismo repositorio.
 - **Sin instalar nada en tu computadora:** igual que el backend, corre en Docker. Un servicio `frontend` (imagen de Node) levanta Vite con recarga en vivo.
 - **Mismo dominio que la API:** nginx sirve el frontend y manda `/api` y `/admin` a Django. Así la sesión (cookie + CSRF) funciona sin configuraciones extra y sin abrir la API a otros sitios (sin CORS).
+- **Pruebas en Docker:** `docker compose run --rm pruebas-pantallas` (Playwright con Chromium contra `http://web/app/`); el servicio `preparar-pruebas` deja antes al usuario de prueba con su contraseña inicial. Vitest corre dentro del servicio `frontend`. Comandos en `docs/entorno-local.md`.
+- **Probar desde el iPad:** con Tailscale (`tailscale serve`), sin abrir el entorno a la red local; ver `docs/entorno-local.md`.
 - **Durante la transición** (entorno local de QA):
   - `http://localhost:8080/app/` → frontend nuevo;
   - `http://localhost:8080/` → prototipo (sigue igual), también en GitHub Pages.
@@ -57,10 +60,12 @@ frontend/
 │   │   ├── agenda/
 │   │   └── …                # caja, presupuestos, inventario, reportes, personal, empresa
 │   ├── componentes/         # piezas compartidas: Boton, Modal, Tabla, CampoFecha, AvisoMotivo…
-│   ├── estilos/             # tokens.css (de css/app.css), base.css
+│   ├── estilos/             # tokens.css (copia de css/app.css: un color se cambia en los dos), base.css
 │   └── utilidades/          # fechas, formatos de dinero, permisos, mayúsculas
-├── pruebas/                 # Playwright (flujos completos)
+├── pruebas/                 # Playwright (flujos completos y tamaños de pantalla); capturas en pruebas/capturas/
 ├── public/                  # manifiesto para "agregar a pantalla de inicio", íconos
+├── openapi/esquema.json     # esquema de la API (GENERADO por Django, de aquí salen los tipos)
+├── docker/                  # arranque del contenedor, pruebas y generador de íconos
 └── package.json
 ```
 
@@ -71,11 +76,14 @@ Cada módulo tiene sus pantallas, sus componentes propios y sus pruebas juntos. 
 Las reglas del negocio son las de `CLAUDE.md` y `docs/requisitos.md`; aquí, cómo se aplican en el frontend:
 
 1. **La seguridad real está en la API y en la base.** El frontend oculta lo que no corresponde (por comodidad), pero nunca es la única protección.
-2. **Permisos** desde `GET /api/v1/sesion/` (`permisos`, `sucursales`). Un solo ayudante, `usePuede("dinero")`, decide qué se muestra. Sin el permiso `dinero` no se muestran precios, montos ni ingresos (salvo el monto a cobrar de cada paciente, que recepción ve para cobrar; requisitos §2.2).
+2. **Permisos** desde `GET /api/v1/sesion/` (`permisos`, `permisos_detalle`, `sucursales`). Un solo ayudante, `usePuede("dinero")`, decide qué se muestra; también acepta una regla con varios permisos, como las del menú: `usePuede((tiene) => tiene("cobrar") || tiene("caja"))`. Sin el permiso `dinero` no se muestran precios, montos ni ingresos (salvo el monto a cobrar de cada paciente, que recepción ve para cobrar; requisitos §2.2).
 3. **Sesión:**
-   - Si la API responde que no hay sesión (30 minutos sin uso), se vuelve a la pantalla de entrada con un aviso.
-   - Si responde "cambia tu contraseña inicial", se va a la pantalla de cambio de contraseña y no se deja usar nada más.
-4. **Errores:** los mensajes de la API ya vienen en español; se muestran tal cual. Si la API responde **409** con el aviso del doctor ocupado, se muestra el aviso y se ofrece "Agendar de todos modos" (`confirmar_empalme`).
+   - Si la API responde **401** (no hay sesión: 30 minutos sin peticiones), se vuelve a la pantalla de entrada con el aviso "Tu sesión se cerró por inactividad".
+   - **También la pantalla cuenta 30 minutos sin que la persona la toque** y entonces cierra la sesión (decidido en la F0): una pantalla que se refresca sola (la agenda) mantendría viva la sesión del servidor, y en un iPad compartido no deben quedar datos a la vista.
+   - Si responde **403 con `codigo: "cambiar_password"`**, se va a la pantalla de cambio de contraseña y no se deja usar nada más.
+   - El frontend decide por el `codigo` del error, nunca por el texto del mensaje.
+   - En el dispositivo solo se recuerda el **código de la clínica** (para no escribirlo cada vez); nunca el usuario ni la contraseña.
+4. **Errores:** los mensajes de la API ya vienen en español, con acentos (`detail`); se muestran tal cual. Si la API responde **409** con el aviso del doctor ocupado, se muestra el aviso y se ofrece "Agendar de todos modos" (`confirmar_empalme`).
 5. **Nunca `dangerouslySetInnerHTML`.** React ya protege el texto que viene de datos; no se desactiva esa protección.
 6. **Fechas y horas** en la zona horaria de la sucursal (`sucursal.zona_horaria`), no en la del dispositivo.
 7. **Nada de cargar "toda la base".** Listas paginadas y filtros en el servidor (el prototipo carga todo porque es una demo; el sistema real no).
@@ -94,10 +102,12 @@ Las reglas del negocio son las de `CLAUDE.md` y `docs/requisitos.md`; aquí, có
 
 | Fase | Qué incluye | Necesita de la API |
 |---|---|---|
-| **F0. Base** | Proyecto en `frontend/`, Docker y nginx (`/app/`), tokens y diseño general (menú Principal/Gestión, modo día y noche), entrada con clínica + usuario + contraseña, cambio de contraseña inicial, cierre por inactividad, tipos generados, primeras pruebas y GitHub Actions | `drf-spectacular` para publicar el esquema OpenAPI |
+| **F0. Base** ✅ hecha (v0.7.0) | Proyecto en `frontend/`, Docker y nginx (`/app/`), tokens y diseño general (menú Principal/Gestión, modo día y noche), entrada con clínica + usuario + contraseña, cambio de contraseña inicial, cierre por inactividad, tipos generados, primeras pruebas y GitHub Actions | `drf-spectacular` para publicar el esquema OpenAPI |
 | **F1. Pacientes** | Buscar, dar de alta, ficha con datos generales, alerta de alergias, baja con motivo | Ya existe |
 | **F2. Agenda** | Día por sillón y semana, nueva cita paso a paso, mover y estirar, aviso del doctor ocupado, cancelar y eliminar con motivo | Ya existe (v0.6.0) |
 | **F3 en adelante** | Consulta y odontograma, presupuestos, caja, inventario, reportes, personal, empresa | Se hace primero la parte de la API de cada módulo y luego sus pantallas |
 
+- **F0 (v0.7.0), ajustes aprobados al planearla:** la API responde 401 sin sesión y un `codigo` en cada error; mensajes de la API con acentos; cierre por inactividad también en la pantalla; esquema OpenAPI en `/api/v1/esquema/` solo con sesión; se recuerda solo el código de la clínica; prueba en iPad con Tailscale; Playwright también en GitHub Actions (con el entorno de Docker).
+- **Pendiente para la F1:** cargar cada sección solo cuando se abre (hoy todo el frontend se descarga junto, unos 180 KB comprimidos; con pacientes ya conviene partirlo por rutas, §5).
 - **Al terminar F1 y F2**, ya se puede probar con datos compartidos: varias personas en distintos dispositivos sobre la misma base. Puede ser con el entorno local expuesto de forma privada (Tailscale) o con un QA en la nube.
-- **Cada PR** pasa por la revisión de los agentes (`/revision`). En la F0 se agrega `qa-pantallas`, que corre las pruebas del frontend en computadora, iPad y celular. Desde la F1 se agrega `paridad-prototipo`, que compara cada pantalla nueva con el prototipo para no perder reglas ni flujos.
+- **Cada PR** pasa por la revisión de los agentes (`/revision`). Desde la F0 está `qa-pantallas`, que corre las pruebas del frontend en computadora, iPad y celular, en modo día y noche, y revisa las capturas. Desde la F1 se agrega `paridad-prototipo`, que compara cada pantalla nueva con el prototipo para no perder reglas ni flujos.

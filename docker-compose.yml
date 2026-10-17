@@ -2,11 +2,34 @@
 # Uso:   docker compose up -d --build   (levantar; --build si cambio el backend)
 #        docker compose down            (apagar, conserva los datos)
 #        docker compose down -v         (apagar y BORRAR los datos; al subir se recrean)
+#        docker compose run --rm pruebas-pantallas   (pruebas de pantallas con Playwright)
 # Guia completa: docs/entorno-local.md
 #
 # Todos los puertos escuchan solo en 127.0.0.1: nadie de tu red puede entrar.
 
 name: kennadent
+
+# Variables del backend, compartidas por "api" y "preparar-pruebas"
+x-entorno-api: &entorno-api
+  KD_DEBUG: ${KD_DEBUG:-0}
+  KD_SECRET_KEY: ${KD_SECRET_KEY:-cambiar-esta-llave-local-por-una-larga-y-aleatoria}
+  # "web": nombre de nginx dentro de Docker (lo usa Playwright)
+  KD_ALLOWED_HOSTS: localhost,127.0.0.1,api,web
+  KD_CSRF_TRUSTED_ORIGINS: http://localhost:${KD_WEB_PUERTO:-8080},http://127.0.0.1:${KD_WEB_PUERTO:-8080}
+  # Opcional: nombre de Tailscale de esta laptop para probar desde el iPad (docs/entorno-local.md)
+  KD_DIRECCION_EXTRA: ${KD_DIRECCION_EXTRA:-}
+  KD_DB_HOST: db
+  KD_DB_PUERTO: "5432"
+  KD_DB_NOMBRE: ${KD_DB_NOMBRE:-kennadent_qa}
+  KD_DB_ADMIN: ${KD_DB_ADMIN:-kennadent}
+  KD_DB_ADMIN_PASSWORD: ${KD_DB_ADMIN_PASSWORD:-cambiar_local}
+  KD_DB_APP: kd_app
+  KD_APP_PASSWORD: ${KD_APP_PASSWORD:-cambiar_app}
+  KD_CARGAR_DEMO: "1"
+  KD_DEMO_PASSWORD: ${KD_DEMO_PASSWORD:-kennadent2026}
+  KD_ADMIN_USUARIO: ${KD_ADMIN_USUARIO:-admin}
+  KD_ADMIN_PASSWORD: ${KD_ADMIN_PASSWORD:-cambiar_admin}
+  TZ: America/Monterrey
 
 services:
   db:
@@ -38,24 +61,13 @@ services:
     # Backend Django. Al arrancar aplica migraciones y, si la base esta vacia,
     # carga los datos de demostracion. Se usa desde http://localhost:8080/api/
     build: ./backend
+    image: kennadent-api
     restart: unless-stopped
     environment:
-      KD_DEBUG: ${KD_DEBUG:-0}
-      KD_SECRET_KEY: ${KD_SECRET_KEY:-cambiar-esta-llave-local-por-una-larga-y-aleatoria}
-      KD_ALLOWED_HOSTS: localhost,127.0.0.1,api
-      KD_CSRF_TRUSTED_ORIGINS: http://localhost:${KD_WEB_PUERTO:-8080},http://127.0.0.1:${KD_WEB_PUERTO:-8080}
-      KD_DB_HOST: db
-      KD_DB_PUERTO: "5432"
-      KD_DB_NOMBRE: ${KD_DB_NOMBRE:-kennadent_qa}
-      KD_DB_ADMIN: ${KD_DB_ADMIN:-kennadent}
-      KD_DB_ADMIN_PASSWORD: ${KD_DB_ADMIN_PASSWORD:-cambiar_local}
-      KD_DB_APP: kd_app
-      KD_APP_PASSWORD: ${KD_APP_PASSWORD:-cambiar_app}
-      KD_CARGAR_DEMO: "1"
-      KD_DEMO_PASSWORD: ${KD_DEMO_PASSWORD:-kennadent2026}
-      KD_ADMIN_USUARIO: ${KD_ADMIN_USUARIO:-admin}
-      KD_ADMIN_PASSWORD: ${KD_ADMIN_PASSWORD:-cambiar_admin}
-      TZ: America/Monterrey
+      <<: *entorno-api
+    volumes:
+      # Para regenerar el esquema OpenAPI dentro de frontend/openapi/ (docs/entorno-local.md)
+      - ./frontend/openapi:/kd/openapi
     depends_on:
       db:
         condition: service_healthy
@@ -85,8 +97,28 @@ services:
       db:
         condition: service_healthy
 
+  frontend:
+    # Frontend nuevo (React + TypeScript, docs/frontend.md) con Vite y recarga en vivo.
+    # Se usa desde http://localhost:8080/app/ (nginx). Las librerias viven en un volumen.
+    image: node:24.22.0-bookworm-slim
+    restart: unless-stopped
+    working_dir: /frontend
+    command: ["sh", "/frontend/docker/arrancar.sh"]
+    environment:
+      KD_VITE_SONDEO: "1"
+    volumes:
+      - ./frontend:/frontend
+      - kd_frontend_modulos:/frontend/node_modules
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173/app/').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
   web:
-    # Un solo puerto para todo: el prototipo en "/" y el backend en /api y /admin
+    # Un solo puerto para todo: el prototipo en "/", el frontend nuevo en /app/
+    # y el backend en /api y /admin
     image: nginx:alpine
     restart: unless-stopped
     ports:
@@ -101,7 +133,47 @@ services:
     depends_on:
       api:
         condition: service_healthy
+      frontend:
+        condition: service_started
+
+  # ---------- Solo para pruebas (no arrancan con "up"; se usan con "run") ----------
+
+  preparar-pruebas:
+    # Deja a aislamiento/bruno.salas con contrasena inicial (prueba del cambio obligatorio)
+    image: kennadent-api
+    profiles: ["pruebas"]
+    entrypoint: ["python", "manage.py", "preparar_pruebas_pantallas"]
+    environment:
+      <<: *entorno-api
+      KD_DB_ROL: admin
+    depends_on:
+      api:
+        condition: service_healthy
+
+  pruebas-pantallas:
+    # Playwright (Chromium) contra http://web/app/: docker compose run --rm pruebas-pantallas
+    image: mcr.microsoft.com/playwright:v1.64.1-noble
+    profiles: ["pruebas"]
+    working_dir: /frontend
+    entrypoint: ["sh", "/frontend/docker/pruebas-pantallas.sh"]
+    shm_size: 1gb
+    environment:
+      KD_URL_APP: http://web/app/
+      KD_DEMO_PASSWORD: ${KD_DEMO_PASSWORD:-kennadent2026}
+      CI: ${CI:-}
+    volumes:
+      - ./frontend:/frontend
+      - kd_pruebas_modulos:/frontend/node_modules
+    depends_on:
+      preparar-pruebas:
+        condition: service_completed_successfully
+      web:
+        condition: service_started
+      frontend:
+        condition: service_healthy
 
 volumes:
   kd_datos:
   kd_pgadmin:
+  kd_frontend_modulos:
+  kd_pruebas_modulos:

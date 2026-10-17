@@ -6,6 +6,36 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 - El segundo número (**x**) sube con cada entrega grande; el tercero (**y**) con correcciones.
 - La **1.0.0** será la primera versión lista para usarse con clínicas reales.
 
+## [0.7.0] - 2026-10-17
+**Fase F0 del sistema nuevo** (`docs/frontend.md`): la base en React + TypeScript sobre la que se construirá todo, ya conectada a la API. Se abre en http://localhost:8080/app/ (el prototipo sigue igual en `/`).
+
+### Agregado
+- **Frontend nuevo en `frontend/`** (React 19, TypeScript estricto, Vite 8, React Router, TanStack Query, React Hook Form + Zod), con la estructura de carpetas de `docs/frontend.md` y versiones fijas en `package.json`.
+- **Pantallas:**
+  - entrada con clínica + usuario + contraseña (el código de la clínica se recuerda en el dispositivo; usuario y contraseña nunca);
+  - cambio obligatorio de la contraseña inicial: no se deja usar nada más hasta cambiarla;
+  - diseño general igual de sobrio que el prototipo: menú lateral con **Principal** y **Gestión**, barra superior, modo día y noche, versión en el pie del menú;
+  - página de inicio con quién soy, mis sucursales (con sus sillones) y mis permisos;
+  - las demás secciones como "Próximamente" (llegan en F1, F2 y F3), y "Sin acceso" si alguien entra directo a una sección que no tiene.
+- **El menú solo muestra lo que cada persona puede ver**, con un solo ayudante: `usePuede("permiso")`.
+- **Cierre por inactividad:** a los 30 minutos sin tocar la pantalla regresa a la entrada con el aviso "Tu sesión se cerró por inactividad"; lo mismo si el servidor ya cerró la sesión.
+- **Para iPad:** "Agregar a pantalla de inicio" (manifiesto e íconos), botones y campos de 44 px con el dedo, sin zoom al escribir y diseño pensado primero en tablet.
+- **Tipos de la API generados**, no escritos a mano: el backend publica su esquema OpenAPI (`drf-spectacular`) y de ahí sale `frontend/src/api/esquema.d.ts` (`openapi-typescript`).
+- **Docker:** servicio `frontend` (Vite con recarga en vivo, sin instalar Node en tu computadora); nginx sirve `/app/`. Servicios de prueba `preparar-pruebas` y `pruebas-pantallas` (Playwright), que solo corren cuando se piden.
+- **Pruebas del frontend:** 21 con Vitest (cliente de la API, permisos, menú, inactividad) y 20 con Playwright contra el entorno local: entrar y salir, contraseña equivocada, contraseña inicial, cierre por inactividad, permisos, y entrada e inicio en computadora (1366 px), iPad (1024 px) y celular (390 px), en modo día y noche, sin errores de JavaScript ni scroll horizontal.
+- **GitHub Actions** (`.github/workflows/pruebas.yml`): en cada PR compila el frontend y corre sus pruebas, las pruebas de la API, revisa que los tipos estén al día y corre Playwright con el entorno de Docker.
+- Opción para **probar desde el iPad con Tailscale** (`KD_DIRECCION_EXTRA` en `.env`), sin abrir el entorno a tu red.
+
+### Cambiado (API)
+- **Sin sesión, la API responde 401** (antes 403), para que el frontend distinga "no hay sesión" de "no tienes permiso". Los errores traen un `codigo` fijo (ej. `cambiar_password`, `not_authenticated`); el mensaje sigue en español en `detail`.
+- **Mensajes de la API con acentos** ("Usuario o contraseña incorrectos.", "suscripción", "clínica"…), porque el frontend los muestra tal cual. También los nombres de puestos y permisos (migración `0007`, solo cambia el texto).
+- `GET /api/v1/sesion/` también entrega el nombre del puesto, los nombres de los permisos y las sucursales con su nombre y zona horaria.
+- Esquema OpenAPI en `/api/v1/esquema/`, solo con sesión iniciada.
+- 1 prueba nueva de la API (22 en total).
+
+### Agentes
+- **Nuevo agente `qa-pantallas`**: corre la revisión de tipos y estilo, Vitest y Playwright, y mira las capturas de los tres tamaños en modo día y noche. `/revision` lo lanza cuando cambia `frontend/`, `docker-compose.yml` o nginx. El hook de solo lectura tiene un perfil `pantallas` que solo deja correr esas pruebas.
+
 ## [0.6.0] - 2026-10-16
 La API cumple las reglas de acceso y de agenda decididas en octubre (sección 6 de `docs/requisitos.md`). Son los 6 hallazgos que encontró el agente `reglas-negocio` al revisar la v0.5.0.
 

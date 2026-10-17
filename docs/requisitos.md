@@ -129,7 +129,7 @@ Reglas de acceso acordadas (Issues #10 y #11):
 ## 3. Fases siguientes
 
 **Fase 2**
-- Pantallas de inicio de sesión real y de cambio obligatorio de contraseña al primer acceso (la API ya lo aplica desde v0.6.0; las pantallas llegan con el frontend nuevo, fase F0).
+- ~~Pantallas de inicio de sesión real y de cambio obligatorio de contraseña al primer acceso~~: hechas en el frontend nuevo (fase F0, v0.7.0).
 - Recordatorios por **WhatsApp** (API oficial de WhatsApp Business):
   - Al paciente, 24 h antes, pidiendo confirmar o cancelar.
   - A la recepcionista y al doctor, 15 min antes.
@@ -191,6 +191,12 @@ Acordadas al revisar el documento de seguridad, privacidad y reglas del negocio.
 - Uno por uno: cualquiera con permiso de ver historial.
 - Todos a la vez: solo el administrador general, con segunda confirmación de contraseña, y siempre registrado en la bitácora.
 - Formato: un PDF por paciente, todos dentro de un ZIP.
+
+**Decidido al construir la F0 del frontend nuevo (octubre 2026, v0.7.0)**
+- La pantalla **también se cierra a los 30 minutos sin que la persona la toque** (no solo el servidor): la agenda se refrescará sola y no debe quedar abierta con datos de pacientes en un iPad compartido.
+- En el dispositivo se recuerda **solo el código de la clínica**; nunca el usuario ni la contraseña.
+- Los mensajes que da el sistema van **en español con acentos** ("contraseña", "clínica").
+- Para probar desde el iPad mientras no haya QA en la nube: **Tailscale**, solo entre los dispositivos de la cuenta (nunca abierto a la red local ni a internet).
 
 **Para después** (antes de producción)
 - Todo lo legal (aviso de privacidad, consentimiento firmado, contrato con cada clínica, plan ante incidentes), respaldos, proveedor y país de los datos, verificación en 2 pasos.

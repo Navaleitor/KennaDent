@@ -4,13 +4,14 @@ Con **un solo comando** levantas en tu laptop:
 
 | Servicio | Dirección | Para qué |
 |---|---|---|
-| **Prototipo web** | http://localhost:8080 | Las pantallas actuales de KennaDent |
+| **Prototipo web** | http://localhost:8080 | Las pantallas de la demo (datos en el navegador) |
+| **Sistema nuevo** (frontend React) | http://localhost:8080/app/ | Las pantallas reales, conectadas a la API: hoy entrada, cambio de contraseña y página de inicio (fase F0) |
 | **API (backend Django)** | http://localhost:8080/api/v1/ | El servidor real: inicio de sesión, pacientes, agenda… |
 | **Admin de plataforma** | http://localhost:8080/admin/ | Para el equipo de KennaDent: ve todas las empresas |
 | **pgAdmin** | http://localhost:5050 | Ver y consultar la base de datos |
 | **Base de datos** PostgreSQL 16 | `localhost:5433` | Para conectar tu propio pgAdmin |
 
-> **Importante:** el prototipo web **no usa la API**: guarda en el navegador y se queda como demo. Las pantallas que sí usan la API son las del frontend nuevo en React (`docs/frontend.md`), que se construye por fases. Hoy la API ya se puede probar desde el navegador (ver sección 5) y con las pruebas automáticas.
+> **Importante:** el prototipo web **no usa la API**: guarda en el navegador y se queda como demo. Las pantallas que sí usan la API son las del **sistema nuevo** en `/app/` (React, `docs/frontend.md`), que se construye por fases: la F0 (entrada, contraseña inicial, menú y página de inicio) ya está; pacientes (F1) y agenda (F2) siguen.
 
 Todo corre dentro de **Docker**. Docker crea "computadoras miniatura" (contenedores) con todo instalado: no instalas PostgreSQL ni Python en tu sistema. Es la misma tecnología con la que después se sube a la nube.
 
@@ -18,6 +19,7 @@ Todo corre dentro de **Docker**. Docker crea "computadoras miniatura" (contenedo
 
 ```
 Navegador ──> web (nginx, puerto 8080) ──┬──> /           prototipo (archivos)
+                                         ├──> /app/        frontend (Vite, recarga en vivo)
                                          └──> /api /admin  api (Django + Gunicorn)
                                                               │  usuario kd_app
                                                               ▼
@@ -69,6 +71,7 @@ docker compose up -d --build
 - La primera vez tarda unos minutos: descarga cerca de 2 GB y arma la imagen del backend.
 - Al arrancar, el backend crea las tablas (migraciones de Django) y, si la base está vacía, carga los datos de demostración.
 - pgAdmin tarda **alrededor de 1 minuto** la primera vez.
+- El frontend instala sus librerías la primera vez (1 a 2 minutos) dentro de Docker: **no necesitas instalar Node** en tu computadora.
 
 Para ver que todo está arriba:
 
@@ -76,7 +79,7 @@ Para ver que todo está arriba:
 docker compose ps
 ```
 
-Deben aparecer `db` (healthy), `api` (healthy), `pgadmin` y `web`.
+Deben aparecer `db` (healthy), `api` (healthy), `frontend` (healthy), `pgadmin` y `web`.
 
 ---
 
@@ -97,6 +100,29 @@ Todas las personas del equipo de la demo tienen usuario. La contraseña de todos
 El usuario se forma igual que en el prototipo: `nombre.apellido`, sin acentos.
 
 **Admin de plataforma** (http://localhost:8080/admin/): usuario `admin` y la contraseña de `KD_ADMIN_PASSWORD`. Es para el equipo de KennaDent y ve todas las empresas. El personal de las clínicas no puede entrar ahí.
+
+### El sistema nuevo (http://localhost:8080/app/)
+
+1. Abre http://localhost:8080/app/ y entra con clínica `demo`, un usuario de la tabla de arriba y la contraseña de la demo.
+2. Verás la página de inicio con **quién eres, tus sucursales y tus permisos**, y el menú con solo lo que tu usuario puede ver. Las secciones dicen "Próximamente" hasta su fase.
+3. Prueba con otro usuario (menú de tu nombre, arriba a la derecha → **Salir**): `andrea.garza` no ve Caja; `daniela.flores` no ve el bloque Gestión.
+4. **Contraseña inicial:** el usuario `bruno.salas` de la clínica `aislamiento` sirve para probar el cambio obligatorio. Para dejarlo otra vez con la contraseña inicial: `docker compose run --rm preparar-pruebas`.
+5. **Cierre por inactividad:** a los 30 minutos sin tocar la pantalla regresa sola a la entrada.
+6. El botón de luna o sol cambia entre modo día y noche (se recuerda igual que en el prototipo).
+
+Los cambios que se hagan en `frontend/src/` se ven al instante (recarga en vivo).
+
+### Probar desde el iPad o el celular (opcional, con Tailscale)
+
+El entorno solo escucha en tu computadora. Para abrirlo desde tu iPad **sin abrirlo a toda tu red**, usa [Tailscale](https://tailscale.com/) (ya lo tienes instalado), con la misma cuenta en la laptop y en el iPad:
+
+1. En la página de administración de Tailscale activa **MagicDNS** y **HTTPS Certificates** (una sola vez).
+2. En la laptop, en PowerShell: `tailscale serve --bg 8080`. Te dirá una dirección como `https://mi-laptop.tu-red.ts.net`.
+3. En `.env`, pon ese nombre sin `https://`: `KD_DIRECCION_EXTRA=mi-laptop.tu-red.ts.net`, y luego `docker compose up -d` (el backend lo acepta como dirección permitida).
+4. En el iPad, con Tailscale encendido, abre `https://mi-laptop.tu-red.ts.net/app/`. Para tenerlo como app: botón **Compartir → Agregar a pantalla de inicio**.
+5. Para dejar de compartirlo: `tailscale serve --https=443 off`.
+
+Solo tus dispositivos de Tailscale lo pueden abrir, y siguen siendo datos ficticios.
 
 ### Probar la API desde el navegador
 
@@ -168,6 +194,10 @@ Todos son **ficticios** y siguen la demo del prototipo:
 | **Borrar todo y empezar de cero** | `docker compose down -v` y luego `docker compose up -d --build` |
 | Ver los mensajes del backend | `docker compose logs api` |
 | **Correr las pruebas automáticas** | `docker compose exec -e KD_DB_ROL=admin api python manage.py test nucleo` |
+| Ver los mensajes del frontend | `docker compose logs frontend` |
+| **Pruebas del frontend** (tipos, ESLint y Prettier) | `docker compose exec frontend npm run revisar` |
+| **Pruebas del frontend** (Vitest) | `docker compose exec frontend npm test` |
+| **Pruebas de pantallas** (Playwright) | `docker compose run --rm pruebas-pantallas` |
 | Entrar a la base por terminal | `docker compose exec db psql -U kennadent -d kennadent_qa` |
 | Reportes de la Fase C sobre la demo | `docker compose exec db psql -U kennadent -d kennadent_qa -f /kd/pruebas/fase_c_reportes_v0.2.sql` |
 
@@ -190,6 +220,39 @@ docker compose exec db psql -U kennadent -d pruebas -f /kd/pruebas/pruebas_djang
 ```
 
 Deben aparecer **29 líneas `ERROR`**: son los casos "DEBE FALLAR", es decir, la base rechaza bien los datos inválidos. Para repetirlas, primero borra esa base: `docker compose exec db dropdb -U kennadent pruebas`.
+
+### Pruebas del frontend nuevo
+
+```
+docker compose exec frontend npm run revisar
+docker compose exec frontend npm test
+docker compose run --rm pruebas-pantallas
+```
+
+- `revisar`: TypeScript estricto, ESLint y Prettier. Si Prettier se queja del formato: `docker compose exec frontend npm run formato`.
+- `npm test`: 21 pruebas de Vitest (cliente de la API, permisos, menú y cierre por inactividad). Deben decir `21 passed`.
+- `pruebas-pantallas`: 20 pruebas de Playwright (Chromium) contra el entorno levantado: entrar y salir, contraseña equivocada, contraseña inicial, cierre por inactividad, permisos del menú, y la entrada y la página de inicio en computadora (1366 px), iPad (1024 px) y celular (390 px), en modo día y noche, sin errores de JavaScript ni scroll horizontal. Deben decir `20 passed`.
+  - La primera vez descarga la imagen de Playwright (unos 2 GB) e instala librerías.
+  - Antes de empezar, `preparar-pruebas` deja a `aislamiento/bruno.salas` con la contraseña inicial de la demo (la prueba la cambia).
+  - Las capturas quedan en `frontend/pruebas/capturas/` y, si algo falla, el detalle en `frontend/playwright-report/` (ninguna de las dos se sube a GitHub).
+  - Correr solo una prueba: `docker compose run --rm pruebas-pantallas -g "contraseña equivocada"`.
+  - La API acepta **10 inicios de sesión por minuto**; una corrida usa unos 7. Si repites enseguida y falla al entrar, espera un minuto.
+
+Las mismas pruebas (y las de la API) corren solas en GitHub en cada pull request (`.github/workflows/pruebas.yml`).
+
+### Tipos de la API (cuando cambia el backend)
+
+El frontend no escribe a mano cómo son los datos de la API: los toma del esquema que publica Django. Si cambias vistas o serializadores del backend, regenera los tipos y súbelos junto con el cambio:
+
+```
+docker compose up -d --build api
+docker compose exec api python manage.py spectacular --format openapi-json --file /kd/openapi/esquema.json
+docker compose exec frontend npm run tipos
+```
+
+- El primero toma tu cambio del backend; el segundo escribe `frontend/openapi/esquema.json`; el tercero genera `frontend/src/api/esquema.d.ts`.
+- En Git Bash, antepón `MSYS_NO_PATHCONV=1 ` al segundo comando (en PowerShell no hace falta).
+- Si se te olvida, GitHub Actions lo detecta y el PR sale en rojo.
 
 ---
 
@@ -223,5 +286,8 @@ Reglas para que el paso a la nube no dé sorpresas:
 | En `/api/` sale "CSRF Failed" | Abre primero http://localhost:8080/api/v1/sesion/ (te entrega la cookie) y entra siempre por el puerto 8080 |
 | "Usuario o contraseña incorrectos" con los datos de demo | La contraseña es la que había en `.env` **cuando se creó la base**. Si la cambiaste después: `down -v` y `up -d --build` |
 | pgAdmin no muestra las dos conexiones | Se registran solo la primera vez: `docker compose down`, `docker volume rm kennadent_kd_pgadmin` y `up -d` |
+| http://localhost:8080/app/ dice `502 Bad Gateway` | El frontend todavía está instalando sus librerías o no arrancó: `docker compose logs frontend` y espera a que diga `ready` |
+| El disco C: se llena / Docker falla con "read-only file system" | Docker guarda sus imágenes y la base en su propio disco. En esta laptop ya vive en `D:\Docker\wsl` (Docker Desktop → Settings → Resources → Advanced → *Disk image location*). Revisa con `docker system df` y libera espacio en C: |
+| Docker Desktop no arranca: "initializing Secrets Engine … engine.sock" | Quedó trabado un archivo de conexión. Cierra Docker Desktop, renombra la carpeta `%LOCALAPPDATA%\docker-secrets-engine` (p. ej. a `docker-secrets-engine.danado`) y vuelve a abrirlo. **No uses "Reset to factory defaults"**: borra los datos de QA |
 | En Windows: `entrypoint.sh: not found` o `\r` en un error | Git convirtió los saltos de línea: `git config core.autocrlf false`, borra la carpeta y clona de nuevo |
 | Tenías el entorno de la versión anterior (sin backend) | Las tablas ahora las crea Django: `docker compose down -v` y `up -d --build` |

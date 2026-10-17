@@ -1,0 +1,2222 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "API de KennaDent",
+        "version": "v1"
+    },
+    "paths": {
+        "/api/v1/citas/": {
+            "get": {
+                "operationId": "citas_list",
+                "description": "Agenda. ?desde=&hasta= (fechas ISO), ?sucursal=, ?trabajador=, ?unidad=, ?paciente=.\nSin \"agenda_todas\" cada persona ve solo sus citas; sin \"todas_sucursales\",\nsolo las de sus sucursales (y siempre las suyas). Las canceladas y eliminadas\nno salen en la agenda; historial completo del paciente: ?paciente=&bajas=1 (sin fechas).\nCancelar o eliminar: POST /citas/{id}/cancelar/ o /eliminar/ con {motivo}.",
+                "tags": [
+                    "citas"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Cita"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "citas_create",
+                "description": "Agenda. ?desde=&hasta= (fechas ISO), ?sucursal=, ?trabajador=, ?unidad=, ?paciente=.\nSin \"agenda_todas\" cada persona ve solo sus citas; sin \"todas_sucursales\",\nsolo las de sus sucursales (y siempre las suyas). Las canceladas y eliminadas\nno salen en la agenda; historial completo del paciente: ?paciente=&bajas=1 (sin fechas).\nCancelar o eliminar: POST /citas/{id}/cancelar/ o /eliminar/ con {motivo}.",
+                "tags": [
+                    "citas"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cita"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/citas/{id}/": {
+            "get": {
+                "operationId": "citas_retrieve",
+                "description": "Agenda. ?desde=&hasta= (fechas ISO), ?sucursal=, ?trabajador=, ?unidad=, ?paciente=.\nSin \"agenda_todas\" cada persona ve solo sus citas; sin \"todas_sucursales\",\nsolo las de sus sucursales (y siempre las suyas). Las canceladas y eliminadas\nno salen en la agenda; historial completo del paciente: ?paciente=&bajas=1 (sin fechas).\nCancelar o eliminar: POST /citas/{id}/cancelar/ o /eliminar/ con {motivo}.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este cita.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "citas"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cita"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "citas_update",
+                "description": "Agenda. ?desde=&hasta= (fechas ISO), ?sucursal=, ?trabajador=, ?unidad=, ?paciente=.\nSin \"agenda_todas\" cada persona ve solo sus citas; sin \"todas_sucursales\",\nsolo las de sus sucursales (y siempre las suyas). Las canceladas y eliminadas\nno salen en la agenda; historial completo del paciente: ?paciente=&bajas=1 (sin fechas).\nCancelar o eliminar: POST /citas/{id}/cancelar/ o /eliminar/ con {motivo}.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este cita.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "citas"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cita"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "citas_partial_update",
+                "description": "Agenda. ?desde=&hasta= (fechas ISO), ?sucursal=, ?trabajador=, ?unidad=, ?paciente=.\nSin \"agenda_todas\" cada persona ve solo sus citas; sin \"todas_sucursales\",\nsolo las de sus sucursales (y siempre las suyas). Las canceladas y eliminadas\nno salen en la agenda; historial completo del paciente: ?paciente=&bajas=1 (sin fechas).\nCancelar o eliminar: POST /citas/{id}/cancelar/ o /eliminar/ con {motivo}.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este cita.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "citas"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedCitaRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedCitaRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedCitaRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cita"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/citas/{id}/cancelar/": {
+            "post": {
+                "operationId": "citas_cancelar_create",
+                "description": "Sale de la agenda y libera el sillon; queda en el historial del paciente.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este cita.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "citas"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cita"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/citas/{id}/eliminar/": {
+            "post": {
+                "operationId": "citas_eliminar_create",
+                "description": "Igual que cancelar, pero marcada como eliminada (p. ej. error de captura). Nunca se borra.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este cita.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "citas"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cita"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/esquema/": {
+            "get": {
+                "operationId": "esquema_retrieve",
+                "description": "OpenApi3 schema for this API. Format can be selected via content negotiation.\n\n- YAML: application/vnd.oai.openapi\n- JSON: application/vnd.oai.openapi+json",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "format",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "json",
+                                "yaml"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "lang",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "af",
+                                "ar",
+                                "ar-dz",
+                                "ast",
+                                "az",
+                                "be",
+                                "bg",
+                                "bn",
+                                "br",
+                                "bs",
+                                "ca",
+                                "ckb",
+                                "cs",
+                                "cy",
+                                "da",
+                                "de",
+                                "dsb",
+                                "el",
+                                "en",
+                                "en-au",
+                                "en-gb",
+                                "eo",
+                                "es",
+                                "es-ar",
+                                "es-co",
+                                "es-mx",
+                                "es-ni",
+                                "es-ve",
+                                "et",
+                                "eu",
+                                "fa",
+                                "fi",
+                                "fr",
+                                "fy",
+                                "ga",
+                                "gd",
+                                "gl",
+                                "he",
+                                "hi",
+                                "hr",
+                                "hsb",
+                                "hu",
+                                "hy",
+                                "ia",
+                                "id",
+                                "ig",
+                                "io",
+                                "is",
+                                "it",
+                                "ja",
+                                "ka",
+                                "kab",
+                                "kk",
+                                "km",
+                                "kn",
+                                "ko",
+                                "ky",
+                                "lb",
+                                "lt",
+                                "lv",
+                                "mk",
+                                "ml",
+                                "mn",
+                                "mr",
+                                "ms",
+                                "my",
+                                "nb",
+                                "ne",
+                                "nl",
+                                "nn",
+                                "os",
+                                "pa",
+                                "pl",
+                                "pt",
+                                "pt-br",
+                                "ro",
+                                "ru",
+                                "sk",
+                                "sl",
+                                "sq",
+                                "sr",
+                                "sr-latn",
+                                "sv",
+                                "sw",
+                                "ta",
+                                "te",
+                                "tg",
+                                "th",
+                                "tk",
+                                "tr",
+                                "tt",
+                                "udm",
+                                "ug",
+                                "uk",
+                                "ur",
+                                "uz",
+                                "vi",
+                                "zh-hans",
+                                "zh-hant"
+                            ]
+                        }
+                    }
+                ],
+                "tags": [
+                    "esquema"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/vnd.oai.openapi": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            },
+                            "application/yaml": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            },
+                            "application/vnd.oai.openapi+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/pacientes/": {
+            "get": {
+                "operationId": "pacientes_list",
+                "description": "Directorio de pacientes de la empresa. No se borran: se dan de baja (NOM-004).",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "Un número de página dentro del conjunto de resultados paginado.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "pacientes"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedPacienteList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "pacientes_create",
+                "description": "Directorio de pacientes de la empresa. No se borran: se dan de baja (NOM-004).",
+                "tags": [
+                    "pacientes"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Paciente"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/pacientes/{id}/": {
+            "get": {
+                "operationId": "pacientes_retrieve",
+                "description": "Directorio de pacientes de la empresa. No se borran: se dan de baja (NOM-004).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este paciente.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "pacientes"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Paciente"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "pacientes_update",
+                "description": "Directorio de pacientes de la empresa. No se borran: se dan de baja (NOM-004).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este paciente.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "pacientes"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Paciente"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "pacientes_partial_update",
+                "description": "Directorio de pacientes de la empresa. No se borran: se dan de baja (NOM-004).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este paciente.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "pacientes"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPacienteRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPacienteRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPacienteRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Paciente"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/pacientes/{id}/baja/": {
+            "post": {
+                "operationId": "pacientes_baja_create",
+                "description": "Directorio de pacientes de la empresa. No se borran: se dan de baja (NOM-004).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este paciente.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "pacientes"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Paciente"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/personal/": {
+            "get": {
+                "operationId": "personal_list",
+                "description": "Directorio del equipo (para elegir doctor en la agenda).",
+                "tags": [
+                    "personal"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Trabajador"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/personal/{id}/": {
+            "get": {
+                "operationId": "personal_retrieve",
+                "description": "Directorio del equipo (para elegir doctor en la agenda).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este trabajador.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "personal"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Trabajador"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/sesion/": {
+            "get": {
+                "operationId": "sesion_retrieve",
+                "description": "GET: quien soy (y entrega la cookie CSRF). POST: iniciar sesion. DELETE: salir.\n\nInicio de sesion con {empresa, usuario, password} (ej. demo / andrea.garza).\nSin correos (requisitos, seccion 6). La sesion se cierra tras 30 minutos sin uso.",
+                "summary": "Quien soy (entrega la cookie CSRF)",
+                "tags": [
+                    "sesion"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Sesion"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "sesion_create",
+                "description": "GET: quien soy (y entrega la cookie CSRF). POST: iniciar sesion. DELETE: salir.\n\nInicio de sesion con {empresa, usuario, password} (ej. demo / andrea.garza).\nSin correos (requisitos, seccion 6). La sesion se cierra tras 30 minutos sin uso.",
+                "summary": "Iniciar sesion",
+                "tags": [
+                    "sesion"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EntradaRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EntradaRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EntradaRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Sesion"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Mensaje"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Mensaje"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "sesion_destroy",
+                "description": "GET: quien soy (y entrega la cookie CSRF). POST: iniciar sesion. DELETE: salir.\n\nInicio de sesion con {empresa, usuario, password} (ej. demo / andrea.garza).\nSin correos (requisitos, seccion 6). La sesion se cierra tras 30 minutos sin uso.",
+                "summary": "Cerrar sesion",
+                "tags": [
+                    "sesion"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/sesion/password/": {
+            "post": {
+                "operationId": "sesion_password_create",
+                "summary": "Cambiar mi contrasena (tambien la inicial)",
+                "tags": [
+                    "sesion"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CambiarPasswordRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CambiarPasswordRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CambiarPasswordRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Mensaje"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Mensaje"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/sucursales/": {
+            "get": {
+                "operationId": "sucursales_list",
+                "description": "Todas las vistas de datos: requieren trabajador activo y permiso por accion.\nEl filtro por empresa NO se escribe aqui: lo aplica PostgreSQL (RLS).",
+                "tags": [
+                    "sucursales"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Sucursal"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/sucursales/{id}/": {
+            "get": {
+                "operationId": "sucursales_retrieve",
+                "description": "Todas las vistas de datos: requieren trabajador activo y permiso por accion.\nEl filtro por empresa NO se escribe aqui: lo aplica PostgreSQL (RLS).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este sucursal.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "sucursales"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Sucursal"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/tipos-cita/": {
+            "get": {
+                "operationId": "tipos_cita_list",
+                "description": "Todas las vistas de datos: requieren trabajador activo y permiso por accion.\nEl filtro por empresa NO se escribe aqui: lo aplica PostgreSQL (RLS).",
+                "tags": [
+                    "tipos-cita"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TipoCita"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/tipos-cita/{id}/": {
+            "get": {
+                "operationId": "tipos_cita_retrieve",
+                "description": "Todas las vistas de datos: requieren trabajador activo y permiso por accion.\nEl filtro por empresa NO se escribe aqui: lo aplica PostgreSQL (RLS).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este tipo cita.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "tipos-cita"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TipoCita"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/tratamientos/": {
+            "get": {
+                "operationId": "tratamientos_list",
+                "description": "Todas las vistas de datos: requieren trabajador activo y permiso por accion.\nEl filtro por empresa NO se escribe aqui: lo aplica PostgreSQL (RLS).",
+                "tags": [
+                    "tratamientos"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Tratamiento"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "tratamientos_create",
+                "description": "Todas las vistas de datos: requieren trabajador activo y permiso por accion.\nEl filtro por empresa NO se escribe aqui: lo aplica PostgreSQL (RLS).",
+                "tags": [
+                    "tratamientos"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TratamientoRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TratamientoRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TratamientoRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Tratamiento"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/tratamientos/{id}/": {
+            "get": {
+                "operationId": "tratamientos_retrieve",
+                "description": "Todas las vistas de datos: requieren trabajador activo y permiso por accion.\nEl filtro por empresa NO se escribe aqui: lo aplica PostgreSQL (RLS).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este tratamiento.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "tratamientos"
+                ],
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Tratamiento"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "tratamientos_update",
+                "description": "Todas las vistas de datos: requieren trabajador activo y permiso por accion.\nEl filtro por empresa NO se escribe aqui: lo aplica PostgreSQL (RLS).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este tratamiento.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "tratamientos"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TratamientoRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TratamientoRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TratamientoRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Tratamiento"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "tratamientos_partial_update",
+                "description": "Todas las vistas de datos: requieren trabajador activo y permiso por accion.\nEl filtro por empresa NO se escribe aqui: lo aplica PostgreSQL (RLS).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Un valor de entero único que identifique este tratamiento.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "tratamientos"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedTratamientoRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedTratamientoRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedTratamientoRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieSesion": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Tratamiento"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CambiarPasswordRequest": {
+                "type": "object",
+                "properties": {
+                    "actual": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "nueva": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                },
+                "required": [
+                    "actual",
+                    "nueva"
+                ]
+            },
+            "Cita": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "sucursal": {
+                        "type": "integer"
+                    },
+                    "unidad": {
+                        "type": "integer"
+                    },
+                    "paciente": {
+                        "type": "integer"
+                    },
+                    "paciente_nombre": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "trabajador": {
+                        "type": "integer"
+                    },
+                    "doctor_nombre": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "tipo_cita": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "tratamiento": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "piezas": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "maximum": 32767,
+                            "minimum": -32768
+                        },
+                        "nullable": true
+                    },
+                    "inicio": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "fin": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "estado": {
+                        "$ref": "#/components/schemas/EstadoEnum"
+                    },
+                    "nota": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "baja_motivo": {
+                        "type": "string",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "baja_por": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "baja_en": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "baja_en",
+                    "baja_motivo",
+                    "baja_por",
+                    "doctor_nombre",
+                    "fin",
+                    "id",
+                    "inicio",
+                    "paciente",
+                    "paciente_nombre",
+                    "sucursal",
+                    "trabajador",
+                    "unidad"
+                ]
+            },
+            "CitaRequest": {
+                "type": "object",
+                "properties": {
+                    "sucursal": {
+                        "type": "integer"
+                    },
+                    "unidad": {
+                        "type": "integer"
+                    },
+                    "paciente": {
+                        "type": "integer"
+                    },
+                    "trabajador": {
+                        "type": "integer"
+                    },
+                    "tipo_cita": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "tratamiento": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "piezas": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "maximum": 32767,
+                            "minimum": -32768
+                        },
+                        "nullable": true
+                    },
+                    "inicio": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "fin": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "estado": {
+                        "$ref": "#/components/schemas/EstadoEnum"
+                    },
+                    "nota": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "confirmar_empalme": {
+                        "type": "boolean",
+                        "writeOnly": true,
+                        "default": false
+                    }
+                },
+                "required": [
+                    "fin",
+                    "inicio",
+                    "paciente",
+                    "sucursal",
+                    "trabajador",
+                    "unidad"
+                ]
+            },
+            "EmpresaSesion": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "codigo": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "codigo",
+                    "id",
+                    "nombre"
+                ]
+            },
+            "EntradaRequest": {
+                "type": "object",
+                "properties": {
+                    "empresa": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Codigo de la clinica, ej. demo"
+                    },
+                    "usuario": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "nombre.apellido"
+                    },
+                    "password": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                },
+                "required": [
+                    "empresa",
+                    "password",
+                    "usuario"
+                ]
+            },
+            "EstadoEnum": {
+                "enum": [
+                    "programada",
+                    "confirmada",
+                    "en_sala",
+                    "atendida",
+                    "no_asistio"
+                ],
+                "type": "string",
+                "description": "* `programada` - programada\n* `confirmada` - confirmada\n* `en_sala` - en_sala\n* `atendida` - atendida\n* `no_asistio` - no_asistio"
+            },
+            "Mensaje": {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string"
+                    },
+                    "codigo": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "detail"
+                ]
+            },
+            "Paciente": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "expediente": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "apellidos": {
+                        "type": "string"
+                    },
+                    "sexo": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 1
+                    },
+                    "fecha_nacimiento": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "telefono": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "correo": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "sucursal_origen": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "activo": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "baja_en": {
+                        "type": "string",
+                        "format": "date",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "baja_motivo": {
+                        "type": "string",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "creado_en": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "alergias": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "datos_clinicos_completos": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "activo",
+                    "alergias",
+                    "apellidos",
+                    "baja_en",
+                    "baja_motivo",
+                    "creado_en",
+                    "datos_clinicos_completos",
+                    "expediente",
+                    "id",
+                    "nombre"
+                ]
+            },
+            "PacienteRequest": {
+                "type": "object",
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "apellidos": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "sexo": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 1
+                    },
+                    "fecha_nacimiento": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "telefono": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "correo": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "sucursal_origen": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "apellidos",
+                    "nombre"
+                ]
+            },
+            "PaginatedPacienteList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Paciente"
+                        }
+                    }
+                }
+            },
+            "PatchedCitaRequest": {
+                "type": "object",
+                "properties": {
+                    "sucursal": {
+                        "type": "integer"
+                    },
+                    "unidad": {
+                        "type": "integer"
+                    },
+                    "paciente": {
+                        "type": "integer"
+                    },
+                    "trabajador": {
+                        "type": "integer"
+                    },
+                    "tipo_cita": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "tratamiento": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "piezas": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "maximum": 32767,
+                            "minimum": -32768
+                        },
+                        "nullable": true
+                    },
+                    "inicio": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "fin": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "estado": {
+                        "$ref": "#/components/schemas/EstadoEnum"
+                    },
+                    "nota": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "confirmar_empalme": {
+                        "type": "boolean",
+                        "writeOnly": true,
+                        "default": false
+                    }
+                }
+            },
+            "PatchedPacienteRequest": {
+                "type": "object",
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "apellidos": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "sexo": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 1
+                    },
+                    "fecha_nacimiento": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "telefono": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "correo": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "sucursal_origen": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                }
+            },
+            "PatchedTratamientoRequest": {
+                "type": "object",
+                "description": "Sin el permiso \"dinero\" no se envia el precio (regla de CLAUDE.md).",
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "categoria": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "precio_base": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "duracion_min": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648
+                    },
+                    "activo": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "PermisoSesion": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "grupo": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "grupo",
+                    "id",
+                    "nombre"
+                ]
+            },
+            "Sesion": {
+                "type": "object",
+                "description": "Sin sesion solo viene \"autenticado\": false.",
+                "properties": {
+                    "autenticado": {
+                        "type": "boolean"
+                    },
+                    "login": {
+                        "type": "string"
+                    },
+                    "debe_cambiar_password": {
+                        "type": "boolean"
+                    },
+                    "empresa": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/EmpresaSesion"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "trabajador": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/TrabajadorSesion"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "permisos": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "permisos_detalle": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PermisoSesion"
+                        }
+                    },
+                    "sucursales": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SucursalSesion"
+                        }
+                    }
+                },
+                "required": [
+                    "autenticado"
+                ]
+            },
+            "Sucursal": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "direccion": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "telefono": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "zona_horaria": {
+                        "type": "string"
+                    },
+                    "activo": {
+                        "type": "boolean"
+                    },
+                    "unidades": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Unidad"
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "activo",
+                    "id",
+                    "nombre",
+                    "unidades",
+                    "zona_horaria"
+                ]
+            },
+            "SucursalSesion": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "zona_horaria": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "nombre",
+                    "zona_horaria"
+                ]
+            },
+            "TipoCita": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "duracion_min": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648
+                    },
+                    "pide_tratamiento": {
+                        "type": "boolean"
+                    },
+                    "es_diagnostico": {
+                        "type": "boolean"
+                    },
+                    "activo": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "activo",
+                    "duracion_min",
+                    "es_diagnostico",
+                    "id",
+                    "nombre",
+                    "pide_tratamiento"
+                ]
+            },
+            "Trabajador": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "nombre_completo": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "puesto": {
+                        "type": "string"
+                    },
+                    "atiende": {
+                        "type": "boolean"
+                    },
+                    "especialidad": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "color_agenda": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "activo": {
+                        "type": "boolean"
+                    },
+                    "sucursales": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "activo",
+                    "atiende",
+                    "id",
+                    "nombre",
+                    "nombre_completo",
+                    "puesto",
+                    "sucursales"
+                ]
+            },
+            "TrabajadorSesion": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "puesto": {
+                        "type": "string"
+                    },
+                    "puesto_nombre": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "nombre",
+                    "puesto",
+                    "puesto_nombre"
+                ]
+            },
+            "Tratamiento": {
+                "type": "object",
+                "description": "Sin el permiso \"dinero\" no se envia el precio (regla de CLAUDE.md).",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "categoria": {
+                        "type": "string"
+                    },
+                    "precio_base": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "duracion_min": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648
+                    },
+                    "activo": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "activo",
+                    "categoria",
+                    "duracion_min",
+                    "id",
+                    "nombre",
+                    "precio_base"
+                ]
+            },
+            "TratamientoRequest": {
+                "type": "object",
+                "description": "Sin el permiso \"dinero\" no se envia el precio (regla de CLAUDE.md).",
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "categoria": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "precio_base": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "duracion_min": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648
+                    },
+                    "activo": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "activo",
+                    "categoria",
+                    "duracion_min",
+                    "nombre",
+                    "precio_base"
+                ]
+            },
+            "Unidad": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "activo": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "activo",
+                    "id",
+                    "nombre"
+                ]
+            }
+        },
+        "securitySchemes": {
+            "cookieSesion": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "sessionid"
+            }
+        }
+    }
+}

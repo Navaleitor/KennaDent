@@ -14,6 +14,8 @@ Perfiles:
   consulta  git de solo consulta y filtros de texto (grep, head, tail...).
   base      consulta + psql de SOLO LECTURA contra la base de QA (seguridad-datos).
   qa        consulta + docker compose para correr pruebas (qa-backend).
+  pantallas consulta + las pruebas del frontend en Docker (qa-pantallas): revisar y Vitest
+            dentro del servicio "frontend", Playwright con "run --rm pruebas-pantallas" y logs.
 
 Un comando permitido sale con 0. Uno prohibido sale con 2 y el motivo va a stderr
 (Claude Code bloquea la herramienta y el agente ve el motivo).
@@ -42,6 +44,13 @@ SQL_PROHIBIDO = re.compile(
 
 COMPOSE_SUBCOMANDOS = {"ps", "exec", "logs", "up", "down", "top", "images", "version"}
 DENTRO_PROHIBIDO = {"env", "printenv", "cat", "less", "more"}
+
+
+# qa-pantallas: solo estos comandos dentro del contenedor "frontend"
+FRONTEND_PERMITIDOS = [["npm", "run", "revisar"], ["npm", "test"], ["npx", "vitest", "run"]]
+# Opciones de Playwright que solo eligen qué correr y cómo mostrarlo (ninguna escribe fuera de test-results)
+PLAYWRIGHT_CON_VALOR = {"-g", "--grep", "--project", "--reporter", "--retries"}
+PLAYWRIGHT_SOLAS = {"-x", "--list"}
 
 
 class Bloqueado(Exception):
@@ -107,6 +116,31 @@ def revisar_compose(args):
             raise Bloqueado("docker compose exec: no se permite leer variables de entorno ni archivos del contenedor")
 
 
+def revisar_pantallas(args):
+    """args = lo que va después de "docker compose"."""
+    if args[:1] in (["ps"], ["logs"]):
+        return
+    if args[:3] == ["exec", "-T", "frontend"]:
+        if args[3:] in FRONTEND_PERMITIDOS:
+            return
+        raise Bloqueado(f"en el frontend solo se permite: {', '.join(' '.join(c) for c in FRONTEND_PERMITIDOS)}")
+    if args[:3] == ["run", "--rm", "pruebas-pantallas"]:
+        resto = args[3:]
+        i = 0
+        while i < len(resto):
+            a = resto[i]
+            if a in PLAYWRIGHT_SOLAS:
+                i += 1
+            elif a in PLAYWRIGHT_CON_VALOR and i + 1 < len(resto):
+                i += 2
+            elif any(a.startswith(o + "=") for o in PLAYWRIGHT_CON_VALOR if o.startswith("--")):
+                i += 1
+            else:
+                raise Bloqueado(f"opción de Playwright no permitida: {a}")
+        return
+    raise Bloqueado("docker compose: solo ps, logs, exec -T frontend (pruebas) y run --rm pruebas-pantallas")
+
+
 def revisar_segmento(seg, perfil):
     while seg and re.fullmatch(r"MSYS_NO_PATHCONV=1", seg[0]):
         seg = seg[1:]
@@ -123,6 +157,8 @@ def revisar_segmento(seg, perfil):
         return
     if perfil == "base" and seg[:len(PSQL_LECTURA)] == PSQL_LECTURA:
         return revisar_psql(seg[len(PSQL_LECTURA):])
+    if perfil == "pantallas" and seg[:2] == ["docker", "compose"]:
+        return revisar_pantallas(seg[2:])
     if perfil == "qa":
         if seg == ["export", "MSYS_NO_PATHCONV=1"]:
             return
@@ -204,6 +240,19 @@ def probar():
         ("qa", "docker compose exec -T db psql -c 'select 1' > /tmp/sql_out.txt", False),
         ("qa", "docker inspect kennadent-db-1", False),
         ("qa", "echo x >> backend/nucleo/models/clinico.py", False),
+        ("pantallas", "docker compose ps", True),
+        ("pantallas", "docker compose exec -T frontend npm run revisar 2>&1 | tail -20", True),
+        ("pantallas", "docker compose exec -T frontend npm test", True),
+        ("pantallas", "docker compose run --rm pruebas-pantallas --reporter=list 2>&1 | tail -60", True),
+        ("pantallas", 'docker compose run --rm pruebas-pantallas -g "contraseña equivocada"', True),
+        ("pantallas", "docker compose logs frontend --tail 50", True),
+        ("pantallas", "docker compose exec -T frontend npm run formato", False),
+        ("pantallas", "docker compose exec -T frontend sh -c 'rm -rf src'", False),
+        ("pantallas", "docker compose run --rm pruebas-pantallas --update-snapshots", False),
+        ("pantallas", "docker compose run --rm api python manage.py flush", False),
+        ("pantallas", "docker compose down -v", False),
+        ("pantallas", "docker compose exec -T db psql -c 'select 1'", False),
+        ("pantallas", "npm install", False),
     ]
     fallas = 0
     for perfil, cmd, esperado in casos:

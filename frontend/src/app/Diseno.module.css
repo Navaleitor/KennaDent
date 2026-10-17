@@ -1,0 +1,314 @@
+/* Diseño general, igual que el prototipo (css/app.css: .sidebar, .principal, .barra) */
+.marco {
+  --lateral: var(--sidebar);
+}
+
+.lateral {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--lateral);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  padding: max(18px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.sucursal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+.sucursal > div {
+  display: grid;
+  min-width: 0;
+}
+.sucursal small {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sucursal strong {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sucursalIco {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--primary-soft);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.nav {
+  display: grid;
+  gap: 2px;
+}
+.grupo {
+  display: grid;
+  gap: 2px;
+}
+.grupoTitulo {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 12px 12px 6px;
+}
+.enlace {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  min-height: var(--toque);
+  border-radius: 10px;
+  color: var(--text-2);
+  font-weight: 600;
+  text-decoration: none;
+}
+.enlace:hover {
+  background: var(--surface-3);
+  color: var(--text);
+  text-decoration: none;
+}
+.activo {
+  background: var(--primary-soft);
+  color: var(--text);
+}
+.activo::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--primary);
+}
+.pronto {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 7px;
+  border-radius: 8px;
+  background: var(--neutral-soft);
+  color: var(--muted);
+}
+
+.pie {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--ok-soft);
+  border: 1px solid var(--border);
+}
+.pie strong {
+  display: block;
+  font-size: 12px;
+}
+.pie small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+.pieIco {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--ok);
+  font-weight: 800;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.velo {
+  display: none;
+}
+
+.principal {
+  margin-left: var(--lateral);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  min-height: var(--barra-alto);
+  padding: env(safe-area-inset-top) max(28px, env(safe-area-inset-right)) 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.espacio {
+  flex: 1;
+}
+.soloMovil {
+  display: none;
+}
+.contenido {
+  padding: 28px max(28px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) 28px;
+  max-width: 1480px;
+  width: 100%;
+}
+.contenido:focus {
+  outline: none;
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 4px 4px;
+  min-height: var(--toque);
+  border-radius: 12px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  min-width: 0;
+  margin-left: 4px;
+}
+.usuario:hover,
+.usuario[data-state="open"] {
+  background: var(--surface-3);
+}
+.usuarioTxt {
+  display: grid;
+  min-width: 0;
+}
+.usuarioTxt strong {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+.usuarioTxt small {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuUsuario {
+  min-width: 230px;
+  max-width: calc(100vw - 24px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  z-index: 60;
+}
+.menuCabeza {
+  display: grid;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.menuCabeza small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  min-height: var(--toque);
+  border-radius: 10px;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+.menuItem[data-highlighted] {
+  background: var(--surface-3);
+}
+.menuSeparador {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* Tablet vertical y celular: el menú se abre encima (igual que el prototipo, ≤ 960 px) */
+@media (max-width: 960px) {
+  .lateral {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--shadow-lg);
+    visibility: hidden;
+  }
+  .marco[data-menu-abierto] .lateral {
+    transform: none;
+    visibility: visible;
+  }
+  .marco[data-menu-abierto] .velo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 32, 40, 0.4);
+    z-index: 35;
+  }
+  .principal {
+    margin-left: 0;
+  }
+  .soloMovil {
+    display: inline-grid;
+  }
+}
+@media (max-width: 760px) {
+  .barra {
+    padding: env(safe-area-inset-top) 12px 0;
+    gap: 4px;
+    min-height: 60px;
+  }
+  .contenido {
+    padding: 18px 16px max(18px, env(safe-area-inset-bottom));
+  }
+  .usuarioTxt,
+  .usuario > :global(.ico) {
+    display: none;
+  }
+  .usuario {
+    padding: 2px;
+    margin-left: 0;
+  }
+}

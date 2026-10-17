@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>KennaDent</title>
+    <meta
+      name="description"
+      content="KennaDent: sistema de gestión para clínicas dentales con varias sucursales."
+    />
+    <meta name="theme-color" content="#26414f" />
+    <!-- "Agregar a pantalla de inicio" en iPad y celular -->
+    <link rel="manifest" href="/app/manifest.webmanifest" />
+    <link rel="icon" href="/app/iconos/icono.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/app/iconos/icono-180.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="KennaDent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script>
+      // Antes de pintar: el modo día/noche que eligió la persona (misma llave que el prototipo)
+      try {
+        var t = localStorage.getItem("kennadent-tema");
+        if (t) document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="raiz"></div>
+    <noscript>KennaDent necesita JavaScript activado.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

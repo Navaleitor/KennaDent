@@ -12,7 +12,11 @@
 - Los campos vacíos (`""`) no se guardan: al leer, tratarlos como opcionales (`KD.esc` ya acepta `undefined`).
 - Los scripts son clásicos (no módulos ES) para que funcione abriendo `index.html` con doble clic. Todo cuelga de `window.KD`.
 - Todo texto que venga de datos se escapa con `KD.esc()` antes de meterlo en `innerHTML`.
-- **Frontend real: React + TypeScript en `frontend/`** (decidido en octubre de 2026, v0.6.0). La estructura, las reglas y las fases están en `docs/frontend.md`: seguirla en todo trabajo de frontend nuevo. El prototipo (`index.html`, `js/`, `css/`) queda como demo y referencia de diseño y reglas; no se conecta a la API.
+- **Frontend real: React + TypeScript en `frontend/`** (decidido en octubre de 2026, v0.6.0; **fase F0 hecha en v0.7.0**). La estructura, las reglas y las fases están en `docs/frontend.md`: seguirla en todo trabajo de frontend nuevo. El prototipo (`index.html`, `js/`, `css/`) queda como demo y referencia de diseño y reglas; no se conecta a la API.
+  - Corre en Docker (servicio `frontend`, Vite con recarga en vivo): http://localhost:8080/app/. No hay Node en la computadora: todo comando de npm va por `docker compose exec frontend ...`.
+  - Tipos de la API **generados** (`src/api/esquema.d.ts`, nunca a mano): si cambia la API, regenerarlos (`docs/entorno-local.md`, "Tipos de la API"). GitHub Actions falla si quedaron viejos.
+  - Permisos solo con `usePuede("permiso")` (`src/utilidades/permisos.ts`); errores de la API tal cual (`src/api/cliente.ts`); nunca `dangerouslySetInnerHTML` (ESLint lo prohíbe).
+  - Pruebas: `docker compose exec frontend npm run revisar` (tipos, ESLint, Prettier), `docker compose exec frontend npm test` (Vitest) y `docker compose run --rm pruebas-pantallas` (Playwright: flujos y 1366/1024/390 px en día y noche; capturas en `frontend/pruebas/capturas/`). Correrlas antes de subir cambios del frontend.
 - **Backend: Django 5.2 LTS + Django REST Framework + PostgreSQL 16** (decidido en octubre de 2026). Vive en `backend/`; el prototipo todavía no lo consume.
   - **El esquema lo definen las migraciones de Django** (`backend/nucleo/migrations/`). `docs/modelo-datos/kennadent_esquema_v0.2.sql` queda como especificación; `pruebas/pruebas_django.sql` comprueba que el esquema de Django se comporta igual.
   - Lo que el ORM no sabe declarar (llaves compuestas `(empresa_id, x_id)`, triggers, vistas, Row Level Security, permisos de `kd_app`) va en migraciones `RunSQL` (ver `0002_base_de_datos.py`). Toda tabla nueva de un cliente hereda de `DeEmpresa` y necesita su política RLS y sus llaves compuestas en una migración nueva.
@@ -20,12 +24,14 @@
   - Las reglas que rechaza la base se traducen a mensajes en `nucleo/api/errores.py` (guardar con `guardar_con_reglas()`).
   - Permisos por persona (`trabajador_permiso`), igual que en `js/roles.js`: cada vista declara `permisos_por_accion`.
   - Pruebas: `docker compose exec -e KD_DB_ROL=admin api python manage.py test nucleo` (o con `backend/.venv` contra el PostgreSQL local). Correrlas antes de subir cambios del backend.
-- **Entorno local de QA** (`docker-compose.yml`, guía en `docs/entorno-local.md`): PostgreSQL 16 en `localhost:5433`, backend y prototipo en `localhost:8080` (nginx: `/` prototipo, `/api` y `/admin` Django), pgAdmin en `:5050`. Datos ficticios de dos empresas en `backend/nucleo/sql/datos_demo.sql`, cargados por `python manage.py cargar_demo`. Si cambias el esquema o la demo: `docker compose down -v && docker compose up -d --build` y revisa `docker compose logs api`. Nunca datos reales de pacientes en QA.
+  - Sin sesión la API responde **401**; los errores traen `detail` (mensaje en español, con acentos) y `codigo` (ej. `cambiar_password`). Esquema OpenAPI en `/api/v1/esquema/` (solo con sesión).
+- **Entorno local de QA** (`docker-compose.yml`, guía en `docs/entorno-local.md`): PostgreSQL 16 en `localhost:5433`, backend, prototipo y frontend nuevo en `localhost:8080` (nginx: `/` prototipo, `/app/` frontend nuevo, `/api` y `/admin` Django), pgAdmin en `:5050`. El disco de Docker vive en `D:\Docker\wsl` (el disco C: se llenó en octubre de 2026): no guardar nada pesado en C:. Datos ficticios de dos empresas en `backend/nucleo/sql/datos_demo.sql`, cargados por `python manage.py cargar_demo`. Si cambias el esquema o la demo: `docker compose down -v && docker compose up -d --build` y revisa `docker compose logs api`. Nunca datos reales de pacientes en QA.
 - Considerar LFPDPPP, NOM-004-SSA3-2012 y NOM-024-SSA3-2012 (datos de salud): el expediente y los libros de dinero no se borran (triggers `tg_no_borrar`) y la consulta de expedientes queda en `bitacora`.
 
 ## Estructura
 - `js/roles.js`: puestos, permisos y paleta de colores del equipo. `js/data.js`: datos, almacenamiento y reglas (registro de consulta, caja, inventario, avisos). `js/odonto.js`: odontograma. `js/metricas.js`: reportes y seguimiento. `js/ui.js`: modales, menús, avisos, íconos y gráficas. `js/app.js`: menú (Principal/Gestión), barra y rutas (`#/seccion`).
 - `js/views/*.js`: una pantalla por archivo, registrada en `KD.vistas`.
+- `frontend/`: React + TypeScript (`docs/frontend.md` §3): `src/app/` (rutas, menú, diseño), `src/api/` (cliente, tipos generados, consultas), `src/modulos/` (una carpeta por sección), `src/estilos/tokens.css` (copia de los tokens de `css/app.css`: si cambia un color, cambiarlo en los dos), `pruebas/` (Playwright).
 - `backend/`: Django. `kennadent/settings.py` (todo por variables `KD_*`), `nucleo/models/` (tablas), `nucleo/migrations/`, `nucleo/api/` (vistas, serializadores, permisos), `nucleo/tests/`.
 - `docs/modelo-datos/`: modelo de datos (esquemas, informe de validación y pruebas SQL). `infra/local/`: nginx, usuario `kd_app` de la base y pgAdmin para el entorno local.
 - `css/app.css`: tokens de color en `:root`, con modo noche por `prefers-color-scheme` y `[data-theme="dark"]`. Estilo sobrio y empresarial.
@@ -49,7 +55,7 @@
   - Actualizar la versión en el menú lateral (`index.html`, `.sidebar-pie`) y en el `README.md`.
   - Poner la versión en el título del PR.
 - **Bugs y mejoras** llegan como Issues de GitHub (hay plantillas en `.github/ISSUE_TEMPLATE`). El PR que lo arregla debe decir **"Fixes #N"** (una línea por Issue): GitHub solo reconoce las palabras en inglés para cerrar el Issue solo al hacer merge.
-- **Antes de subir cambios**, probar en Chromium (Playwright ya está instalado) en computadora (~1366 px) y celular (~390 px), en modo día y noche:
+- **Antes de subir cambios**, probar en Chromium (Playwright ya está instalado; para el frontend nuevo, `docker compose run --rm pruebas-pantallas`) en computadora (~1366 px), iPad (~1024 px, frontend nuevo) y celular (~390 px), en modo día y noche:
   - que no haya errores de JavaScript;
   - que no haya scroll horizontal;
   - que funcionen los flujos tocados.
@@ -62,8 +68,9 @@
   | `docs-al-dia` | sonnet | contradicciones entre documentos y entre documentos y código (cita las dos partes, no decide) | siempre |
   | `reglas-negocio` | opus | cambios contra las reglas de `docs/requisitos.md` y de este archivo; lo decidido y no programado sale 🟡 "pendiente conocido" | si cambia backend, pantallas o documentos de reglas |
   | `seguridad-datos` | opus | aislamiento entre clínicas (RLS, llaves compuestas, `kd_app`), permisos por vista, secretos, migraciones nuevas; consulta la base de QA solo en lectura | si cambia el backend |
-  | `qa-backend` | sonnet | pruebas de la API (21) y pruebas SQL (29 rechazos) en Docker; la verificación desde cero (`down -v`) solo si se pide, porque borra los datos ficticios de QA | si cambia el backend |
+  | `qa-backend` | sonnet | pruebas de la API (22) y pruebas SQL (29 rechazos) en Docker; la verificación desde cero (`down -v`) solo si se pide, porque borra los datos ficticios de QA | si cambia el backend |
+  | `qa-pantallas` | sonnet | frontend nuevo: tipos, ESLint y Prettier, Vitest y Playwright (flujos y 1366/1024/390 px en día y noche) y revisa las capturas | si cambia `frontend/`, `docker-compose.yml` o nginx |
 
   Cada agente también se puede usar solo ("usa el agente seguridad-datos"). Para pasarle a `/revision` el título y la descripción del PR: `/revision <título y descripción>`.
-  **Faltan por agregar:** `qa-pantallas` y `paridad-prototipo` con el frontend nuevo (`docs/frontend.md`, fases F0 y F1), y `preproduccion-legal` al preparar producción (§6 "Para después").
+  **Faltan por agregar:** `paridad-prototipo` con la F1 del frontend nuevo (`docs/frontend.md`) y `preproduccion-legal` al preparar producción (§6 "Para después").
 - **Sin firmas de Claude**: no poner al final de commits, pull requests, Issues ni comentarios textos como "Generated with Claude Code", "Generated by Claude Code", "Co-Authored-By: Claude" ni enlaces a la sesión.
