@@ -6,6 +6,7 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -14,12 +15,14 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from nucleo.empresa_actual import fijar_contexto
-from nucleo.models import Bitacora, Cita, Paciente, Sucursal, TipoCita, Trabajador, TrabajadorSucursal, Tratamiento
+from nucleo.models import (Bitacora, Cita, Paciente, Permiso, Sucursal, TipoCita, Trabajador, TrabajadorSucursal,
+                           Tratamiento)
 from nucleo.models.clinico import ESTADOS_BAJA_CITA
 
 from .errores import guardar_con_reglas
 from .permisos import TienePermisos, permisos_de, puede, sucursales_de, trabajador_de
-from .serializers import (CitaSerializer, PacienteSerializer, SucursalSerializer, TipoCitaSerializer,
+from .serializers import (CambiarPasswordSerializer, CitaSerializer, EntradaSerializer, MensajeSerializer,
+                          PacienteSerializer, SesionSerializer, SucursalSerializer, TipoCitaSerializer,
                           TrabajadorSerializer, TratamientoSerializer)
 
 
@@ -29,15 +32,22 @@ def datos_sesion(request):
         return {"autenticado": False}
     t = trabajador_de(request)
     empresa = u.empresa
+    permisos = sorted(permisos_de(request))
+    # Con nombres, para que la pantalla no los invente (sucursales asignadas, no "todas")
+    sucursales = (TrabajadorSucursal.objects.filter(trabajador=t, activo=True, sucursal__activo=True)
+                  .select_related("sucursal").order_by("sucursal_id")) if t else []
     return {
         "autenticado": True,
         "login": u.login,
         "debe_cambiar_password": u.debe_cambiar_password,
         "empresa": {"id": empresa.id, "codigo": empresa.codigo, "nombre": empresa.nombre_comercial} if empresa else None,
-        "trabajador": {"id": t.id, "nombre": t.nombre_completo, "puesto": t.puesto_id} if t else None,
-        "permisos": sorted(permisos_de(request)),
-        "sucursales": list(TrabajadorSucursal.objects.filter(trabajador=t, activo=True)
-                           .values_list("sucursal_id", flat=True)) if t else [],
+        "trabajador": {"id": t.id, "nombre": t.nombre_completo, "puesto": t.puesto_id,
+                       "puesto_nombre": t.puesto.nombre} if t else None,
+        "permisos": permisos,
+        "permisos_detalle": list(Permiso.objects.filter(id__in=permisos).order_by("grupo", "id")
+                                 .values("id", "nombre", "grupo")),
+        "sucursales": [{"id": ts.sucursal_id, "nombre": ts.sucursal.nombre, "zona_horaria": ts.sucursal.zona_horaria}
+                       for ts in sucursales],
     }
 
 
@@ -54,10 +64,13 @@ class SesionView(APIView):
     def get_throttles(self):
         return [ScopedRateThrottle()] if self.request.method == "POST" else []
 
+    @extend_schema(responses=SesionSerializer, summary="Quien soy (entrega la cookie CSRF)")
     @method_decorator(ensure_csrf_cookie)
     def get(self, request):
         return Response(datos_sesion(request))
 
+    @extend_schema(request=EntradaSerializer, responses={200: SesionSerializer, 400: MensajeSerializer,
+                                                          403: MensajeSerializer}, summary="Iniciar sesion")
     @method_decorator(csrf_protect)
     def post(self, request):
         datos = request.data
@@ -71,16 +84,17 @@ class SesionView(APIView):
             login_clave = f"{codigo}/{usuario_txt}" if codigo else usuario_txt
         usuario = authenticate(request, login=login_clave, password=password) if login_clave else None
         if usuario is None or not usuario.is_active:
-            return Response({"detail": "Usuario o contrasena incorrectos."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Usuario o contraseña incorrectos."}, status=status.HTTP_400_BAD_REQUEST)
         fijar_contexto(usuario)   # ya dentro de la transaccion: ahora si ve los datos de su empresa
         if usuario.empresa_id and not usuario.empresa.activo:
-            return Response({"detail": "La suscripcion de esta clinica no esta activa."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "La suscripción de esta clínica no está activa."}, status=status.HTTP_403_FORBIDDEN)
         t = getattr(usuario, "trabajador", None) if usuario.empresa_id else None
         if usuario.empresa_id and (t is None or not t.activo):
-            return Response({"detail": "Esta persona esta dada de baja."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "Esta persona está dada de baja."}, status=status.HTTP_403_FORBIDDEN)
         login(request, usuario)
         return Response(datos_sesion(request))
 
+    @extend_schema(responses={204: None}, summary="Cerrar sesion")
     def delete(self, request):
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -89,10 +103,12 @@ class SesionView(APIView):
 class CambiarPasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=CambiarPasswordSerializer, responses={200: MensajeSerializer, 400: MensajeSerializer},
+                   summary="Cambiar mi contrasena (tambien la inicial)")
     def post(self, request):
         u = request.user
         if not u.check_password(request.data.get("actual") or ""):
-            return Response({"detail": "La contrasena actual no es correcta."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "La contraseña actual no es correcta."}, status=status.HTTP_400_BAD_REQUEST)
         nueva = request.data.get("nueva") or ""
         try:
             validate_password(nueva, u)
@@ -102,7 +118,7 @@ class CambiarPasswordView(APIView):
         u.debe_cambiar_password = False
         u.save(update_fields=["password", "debe_cambiar_password"])
         update_session_auth_hash(request, u)
-        return Response({"detail": "Contrasena actualizada."})
+        return Response({"detail": "Contraseña actualizada."})
 
 
 class BaseEmpresa:
@@ -242,7 +258,7 @@ class CitaViewSet(BaseEmpresa, mixins.CreateModelMixin, mixins.UpdateModelMixin,
                                                      "o solo ?paciente= para su historial completo."})
                 if (hasta - desde).days > 62:
                     from rest_framework.exceptions import ValidationError
-                    raise ValidationError({"detail": "El rango maximo es de 62 dias."})
+                    raise ValidationError({"detail": "El rango máximo es de 62 días."})
                 qs = qs.filter(inicio__lt=hasta, fin__gt=desde)
             for campo in ("sucursal", "trabajador", "unidad", "paciente"):
                 if qp.get(campo):
@@ -255,7 +271,7 @@ class CitaViewSet(BaseEmpresa, mixins.CreateModelMixin, mixins.UpdateModelMixin,
         if not motivo:
             return Response({"detail": "Indica el motivo."}, status=status.HTTP_400_BAD_REQUEST)
         if cita.estado in ESTADOS_BAJA_CITA:
-            return Response({"detail": f"Esta cita ya esta {cita.estado}."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": f"Esta cita ya está {cita.estado}."}, status=status.HTTP_400_BAD_REQUEST)
         cita.estado, cita.baja_motivo = estado, motivo
         cita.baja_por, cita.baja_en = trabajador_de(request), timezone.now()
         with guardar_con_reglas():

@@ -13,12 +13,12 @@ from rest_framework.views import exception_handler
 
 MENSAJES = {
     "cita_sin_empalme_unidad": "La unidad ya tiene una cita en ese horario. Elige otra hora u otra unidad.",
-    "cita_emp_trabajador_sucursal_2": "El doctor no esta asignado a esa sucursal.",
+    "cita_emp_trabajador_sucursal_2": "El doctor no está asignado a esa sucursal.",
     "cita_emp_unidad_1": "La unidad no pertenece a esa sucursal.",
     "cita_check": "La hora de fin debe ser posterior a la de inicio.",
-    "cita_piezas_check": "Hay una pieza dental que no existe en la numeracion FDI.",
+    "cita_piezas_check": "Hay una pieza dental que no existe en la numeración FDI.",
     "cita_baja_con_motivo": "Para cancelar o eliminar una cita indica el motivo.",
-    "paciente_empresa_expediente_key": "Ya existe un paciente con ese numero de expediente.",
+    "paciente_empresa_expediente_key": "Ya existe un paciente con ese número de expediente.",
     "tratamiento_empresa_nombre_key": "Ya existe un tratamiento con ese nombre.",
 }
 
@@ -52,4 +52,18 @@ def guardar_con_reglas():
 
 
 def manejar_error(exc, context):
-    return exception_handler(exc, context)
+    """Respuesta de error de DRF + un "codigo" fijo para que el frontend decida sin leer el texto
+    (ej. "not_authenticated", "cambiar_password", "conflicto"). El "detail" sigue siendo el mensaje
+    en espanol que se muestra tal cual."""
+    respuesta = exception_handler(exc, context)
+    if respuesta is None or not isinstance(exc, APIException) or not isinstance(respuesta.data, dict):
+        return respuesta
+    detalle = str(respuesta.data.get("detail", ""))
+    if isinstance(exc, PermissionDenied) and detalle.startswith("CSRF Failed"):
+        respuesta.data["detail"] = "La página caducó. Vuelve a cargarla e intenta de nuevo."
+        respuesta.data["codigo"] = "csrf"
+        return respuesta
+    codigos = exc.get_codes()
+    if isinstance(codigos, str):
+        respuesta.data["codigo"] = codigos
+    return respuesta

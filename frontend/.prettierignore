@@ -1,0 +1,11 @@
+node_modules
+dist
+package-lock.json
+openapi/esquema.json
+src/api/esquema.d.ts
+playwright-report
+test-results
+pruebas/capturas
+# Copia fiel de css/app.css: se deja con su formato para compararla fácil
+src/estilos/tokens.css
+pruebas/.estado

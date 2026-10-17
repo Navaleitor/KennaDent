@@ -1,0 +1,81 @@
+/* Tokens de color de KennaDent: copiados de css/app.css (prototipo de Kenia).
+   Si cambia un color, se cambia en los dos lugares hasta que el prototipo se retire. */
+/* ===== Tokens: modo día ===== */
+:root {
+  color-scheme: light;
+  --bg: #f4f6f6;
+  --surface: #ffffff;
+  --surface-2: #f8faf9;
+  --surface-3: #eef2f2;
+  --border: #e4e9ea;
+  --border-strong: #d2d9dc;
+  --text: #1d2a33;
+  --text-2: #4a5963;
+  --muted: #778690;
+  --primary: #26414f;
+  --primary-hover: #1b323e;
+  --primary-ink: #ffffff;
+  --primary-soft: #e7eff1;
+  --acento: #b98a45;
+  --ok: #3b7657;   --ok-soft: #e6f2eb;
+  --warn: #946417; --warn-soft: #fbf0dc;
+  --bad: #b2453a;  --bad-soft: #fbe8e5;
+  --info: #3d6b7d; --info-soft: #e4eef2;
+  --lav: #66589f;  --lav-soft: #eeebf7;
+  --neutral-soft: #eef1f2;
+  /* Gráficas: paleta categórica validada (daltonismo y contraste) */
+  --serie-1: #2a78a8; --serie-2: #d9822b; --serie-3: #1f9d74; --serie-4: #8a5cc7; --serie-5: #d05a7f;
+  --serie-otras: #9aa5ad;
+  --barra: #8fb1bd; --barra-destacada: #36627a;
+  --odo-borde: #9aa7ad;
+  --shadow: 0 1px 2px rgba(20, 35, 45, .04), 0 2px 6px rgba(20, 35, 45, .04);
+  --shadow-lg: 0 24px 48px rgba(20, 35, 45, .18);
+  --radius: 14px;
+  --sidebar: 248px;
+  --font: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+/* ===== Tokens: modo noche ===== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0f1416; --surface: #161d20; --surface-2: #1a2226; --surface-3: #222c31;
+    --border: #28343a; --border-strong: #37454c;
+    --text: #e8eef0; --text-2: #b5c2c8; --muted: #8a989f;
+    --primary: #7fb3c6; --primary-hover: #97c4d4; --primary-ink: #0c1a20; --primary-soft: #1d3039;
+    --acento: #d7a863;
+    --ok: #6cc398; --ok-soft: #15291f; --warn: #e3ae5a; --warn-soft: #2d2413;
+    --bad: #ef7d70; --bad-soft: #321b18; --info: #86b9cc; --info-soft: #1a2d35; --lav: #aa9de0; --lav-soft: #25213a;
+    --neutral-soft: #222c31;
+    --serie-1: #3d8fc0; --serie-2: #c9731f; --serie-3: #23a67b; --serie-4: #9a70d6; --serie-5: #d6668b;
+    --serie-otras: #6c777d; --barra: #466d7a; --barra-destacada: #8cc2d4;
+    --odo-borde: #5a6a71;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .35); --shadow-lg: 0 24px 48px rgba(0, 0, 0, .55);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1416; --surface: #161d20; --surface-2: #1a2226; --surface-3: #222c31;
+  --border: #28343a; --border-strong: #37454c;
+  --text: #e8eef0; --text-2: #b5c2c8; --muted: #8a989f;
+  --primary: #7fb3c6; --primary-hover: #97c4d4; --primary-ink: #0c1a20; --primary-soft: #1d3039;
+  --acento: #d7a863;
+  --ok: #6cc398; --ok-soft: #15291f; --warn: #e3ae5a; --warn-soft: #2d2413;
+  --bad: #ef7d70; --bad-soft: #321b18; --info: #86b9cc; --info-soft: #1a2d35; --lav: #aa9de0; --lav-soft: #25213a;
+  --neutral-soft: #222c31;
+  --serie-1: #3d8fc0; --serie-2: #c9731f; --serie-3: #23a67b; --serie-4: #9a70d6; --serie-5: #d6668b;
+  --serie-otras: #6c777d; --barra: #466d7a; --barra-destacada: #8cc2d4;
+  --odo-borde: #5a6a71;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .35); --shadow-lg: 0 24px 48px rgba(0, 0, 0, .55);
+}
+
+/* Solo del frontend nuevo: tamaños táctiles (iPad primero) */
+:root {
+  --toque: 40px; /* alto de botones y campos con mouse */
+  --barra-alto: 66px;
+}
+@media (pointer: coarse) {
+  :root {
+    --toque: 44px; /* mínimo cómodo para el dedo (iPad y celular) */
+  }
+}

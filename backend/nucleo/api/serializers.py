@@ -1,5 +1,6 @@
 from django.db import connection
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
@@ -9,6 +10,61 @@ from nucleo.models.clinico import ESTADOS_BAJA_CITA, ESTADOS_CITA, ESTADOS_LIBER
 
 from .errores import Conflicto
 from .permisos import puede, sucursales_de, trabajador_de
+
+
+# Sesion: solo describen la entrada y la respuesta para el esquema OpenAPI (tipos del frontend)
+class EmpresaSesionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    codigo = serializers.CharField()
+    nombre = serializers.CharField()
+
+
+class TrabajadorSesionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+    puesto = serializers.CharField()
+    puesto_nombre = serializers.CharField()
+
+
+class PermisoSesionSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    nombre = serializers.CharField()
+    grupo = serializers.CharField()
+
+
+class SucursalSesionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+    zona_horaria = serializers.CharField()
+
+
+class SesionSerializer(serializers.Serializer):
+    """Sin sesion solo viene "autenticado": false."""
+
+    autenticado = serializers.BooleanField()
+    login = serializers.CharField(required=False)
+    debe_cambiar_password = serializers.BooleanField(required=False)
+    empresa = EmpresaSesionSerializer(required=False, allow_null=True)
+    trabajador = TrabajadorSesionSerializer(required=False, allow_null=True)
+    permisos = serializers.ListField(child=serializers.CharField(), required=False)
+    permisos_detalle = PermisoSesionSerializer(many=True, required=False)
+    sucursales = SucursalSesionSerializer(many=True, required=False)
+
+
+class EntradaSerializer(serializers.Serializer):
+    empresa = serializers.CharField(help_text="Codigo de la clinica, ej. demo")
+    usuario = serializers.CharField(help_text="nombre.apellido")
+    password = serializers.CharField()
+
+
+class CambiarPasswordSerializer(serializers.Serializer):
+    actual = serializers.CharField()
+    nueva = serializers.CharField()
+
+
+class MensajeSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+    codigo = serializers.CharField(required=False)
 
 
 def mayus(texto):
@@ -29,6 +85,7 @@ class SucursalSerializer(serializers.ModelSerializer):
         model = Sucursal
         fields = ["id", "nombre", "direccion", "telefono", "zona_horaria", "activo", "unidades"]
 
+    @extend_schema_field(UnidadSerializer(many=True))
     def get_unidades(self, obj):
         return UnidadSerializer(Unidad.objects.filter(sucursal=obj).order_by("id"), many=True).data
 
@@ -41,7 +98,7 @@ class TrabajadorSerializer(serializers.ModelSerializer):
         model = Trabajador
         fields = ["id", "nombre", "nombre_completo", "puesto", "atiende", "especialidad", "color_agenda", "activo", "sucursales"]
 
-    def get_sucursales(self, obj):
+    def get_sucursales(self, obj) -> list[int]:
         return list(TrabajadorSucursal.objects.filter(trabajador=obj, activo=True)
                     .order_by("-es_base", "sucursal_id").values_list("sucursal_id", flat=True))
 
@@ -95,11 +152,11 @@ class PacienteSerializer(serializers.ModelSerializer):
         except PacienteClinico.DoesNotExist:
             return None
 
-    def get_alergias(self, obj):
+    def get_alergias(self, obj) -> str | None:
         c = self._clinico(obj)
         return c.alergias if c else None
 
-    def get_datos_clinicos_completos(self, obj):
+    def get_datos_clinicos_completos(self, obj) -> bool:
         c = self._clinico(obj)
         return bool(c and c.completado)
 
@@ -151,10 +208,10 @@ class CitaSerializer(serializers.ModelSerializer):
             campos[nombre].queryset = modelo.objects.all()
         return campos
 
-    def get_paciente_nombre(self, obj):
+    def get_paciente_nombre(self, obj) -> str:
         return f"{obj.paciente.nombre} {obj.paciente.apellidos}"
 
-    def get_doctor_nombre(self, obj):
+    def get_doctor_nombre(self, obj) -> str:
         return obj.trabajador.nombre_completo
 
     def validate(self, datos):
@@ -162,7 +219,7 @@ class CitaSerializer(serializers.ModelSerializer):
         request = self.context["request"]
         cita = self.instance
         if cita and cita.estado in ESTADOS_BAJA_CITA:
-            raise serializers.ValidationError({"detail": f"La cita esta {cita.estado}: ya no se modifica."})
+            raise serializers.ValidationError({"detail": f"La cita está {cita.estado}: ya no se modifica."})
         inicio = datos.get("inicio", getattr(cita, "inicio", None))
         fin = datos.get("fin", getattr(cita, "fin", None))
         trabajador = datos.get("trabajador", getattr(cita, "trabajador", None))
@@ -186,7 +243,7 @@ class CitaSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"inicio": "Las citas empiezan solo a las :00 o a las :30."})
         # Cambiar solo el sillón de una cita pasada sí se permite (corregir dónde se atendió)
         if inicio and nueva_hora and inicio <= timezone.now():
-            raise serializers.ValidationError({"inicio": "No se puede agendar ni mover una cita a un dia u hora que ya paso."})
+            raise serializers.ValidationError({"inicio": "No se puede agendar ni mover una cita a un día u hora que ya pasó."})
 
         cambia_agenda = cita is None or any(k in datos and datos[k] != getattr(cita, k) for k in ("inicio", "fin", "trabajador"))
         if inicio and fin and trabajador and cambia_agenda and not confirmar:
@@ -209,7 +266,7 @@ class CitaSerializer(serializers.ModelSerializer):
                 else:
                     # Cita de una sucursal que esta persona no ve: solo horario y sucursal (decidido en v0.6.0)
                     detalle = f"en la sucursal {otra.sucursal.nombre}"
-                raise Conflicto(f"{horario} {detalle}. Envia confirmar_empalme=true para agendar de todos modos.")
+                raise Conflicto(f"{horario} {detalle}. Envía confirmar_empalme=true para agendar de todos modos.")
         return datos
 
     def create(self, datos):

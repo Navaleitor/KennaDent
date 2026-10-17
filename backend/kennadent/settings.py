@@ -20,6 +20,11 @@ if not SECRET_KEY:
     raise RuntimeError("Falta KD_SECRET_KEY (obligatoria cuando KD_DEBUG no esta activo)")
 ALLOWED_HOSTS = [h.strip() for h in env("KD_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in env("KD_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
+# Direccion privada extra (ej. el nombre de Tailscale de la laptop, para probar desde el iPad):
+# se acepta como host y como origen https:// (tailscale serve pone el HTTPS)
+for _direccion in [d.strip() for d in env("KD_DIRECCION_EXTRA", "").split(",") if d.strip()]:
+    ALLOWED_HOSTS.append(_direccion)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{_direccion}")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -30,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "rest_framework",
+    "drf_spectacular",
     "nucleo",
 ]
 
@@ -115,12 +121,24 @@ SESSION_COOKIE_AGE = 30 * 60
 SESSION_SAVE_EVERY_REQUEST = True
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
+    # Como SessionAuthentication, pero sin sesion responde 401 (no 403): ver nucleo/api/autenticacion.py
+    "DEFAULT_AUTHENTICATION_CLASSES": ["nucleo.api.autenticacion.SesionAutenticacion"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
     "EXCEPTION_HANDLER": "nucleo.api.errores.manejar_error",
     "DEFAULT_THROTTLE_RATES": {"login": "10/min"},   # intentos de inicio de sesion por IP
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# Esquema OpenAPI (/api/v1/esquema/, solo con sesion iniciada). De aqui salen los tipos
+# del frontend (frontend/src/api/esquema.d.ts); se regeneran con los comandos de docs/entorno-local.md.
+SPECTACULAR_SETTINGS = {
+    "TITLE": "API de KennaDent",
+    "VERSION": "v1",
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAuthenticated"],
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/v1",
 }
 
 LOGGING = {

@@ -1,0 +1,61 @@
+/* Pantallas sin menú: entrada y cambio de contraseña. Pensadas primero para iPad. */
+.pantalla {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background:
+    radial-gradient(1200px 600px at 10% -10%, var(--primary-soft), transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, var(--surface-3), transparent 60%), var(--bg);
+}
+.esquina {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+}
+.tarjeta {
+  width: 100%;
+  max-width: 440px;
+  padding: 28px 28px 24px;
+  display: grid;
+  gap: 20px;
+}
+.encabezado {
+  display: grid;
+  gap: 18px;
+}
+.encabezado h1 {
+  font-size: 24px;
+}
+.encabezado p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+.formulario {
+  display: grid;
+  gap: 14px;
+}
+.pie {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.reglas {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-2);
+  font-size: 13px;
+  display: grid;
+  gap: 2px;
+}
+
+@media (max-width: 480px) {
+  .tarjeta {
+    padding: 22px 18px 18px;
+  }
+}

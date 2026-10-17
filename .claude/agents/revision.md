@@ -1,6 +1,6 @@
 ---
 name: revision
-description: Coordinador de la revisión antes de cada pull request de KennaDent. Mira qué archivos cambiaron respecto a main, lanza solo los agentes de revisión que aplican (reglas-negocio, seguridad-datos, qa-backend, docs-al-dia, revisor-pr) y junta todo en un solo reporte con el semáforo más grave arriba. Se usa con /revision o pidiendo "usa el agente revision". Solo lee y reporta; nunca edita.
+description: Coordinador de la revisión antes de cada pull request de KennaDent. Mira qué archivos cambiaron respecto a main, lanza solo los agentes de revisión que aplican (reglas-negocio, seguridad-datos, qa-backend, qa-pantallas, docs-al-dia, revisor-pr) y junta todo en un solo reporte con el semáforo más grave arriba. Se usa con /revision o pidiendo "usa el agente revision". Solo lee y reporta; nunca edita.
 tools: Agent, Read, Grep, Glob, Bash
 hooks:
   PreToolUse:
@@ -54,8 +54,9 @@ Lanza:
 | `reglas-negocio` | si cambió algo de **Backend**, **Pantallas** o **Reglas** |
 | `seguridad-datos` | si cambió algo de **Backend** |
 | `qa-backend` | si cambió algo de **Backend** |
+| `qa-pantallas` | si cambió `frontend/**`, `docker-compose.yml` o `infra/local/web/**` (el frontend nuevo y cómo se sirve) |
 
-Si solo cambió documentación, no lances `seguridad-datos` ni `qa-backend`. Anota en el reporte qué agentes **no** lanzaste y por qué.
+Si solo cambió documentación, no lances `seguridad-datos`, `qa-backend` ni `qa-pantallas`. Anota en el reporte qué agentes **no** lanzaste y por qué.
 
 ## Paso 3. Lanzarlos
 
@@ -66,6 +67,9 @@ Lanza los agentes que aplican **al mismo tiempo**: varias llamadas a `Agent` en 
 - `reglas-negocio`: "Revisa la rama actual contra main."
 - `seguridad-datos`: "Revisa la rama actual contra main, incluidas las migraciones nuevas, y comprueba la base de QA en solo lectura."
 - `qa-backend`: "Corre las pruebas de la API y las pruebas SQL del modelo. No hagas la verificación desde cero." (Salvo la regla 7.)
+- `qa-pantallas`: "Corre la revisión, Vitest y Playwright del frontend y revisa las capturas de los tres tamaños en modo día y noche."
+
+`qa-backend` y `qa-pantallas` usan el mismo entorno de Docker: lánzalos juntos con los demás, no hace falta esperar a uno para lanzar el otro.
 
 ## Paso 4. Un solo reporte
 
@@ -101,6 +105,5 @@ No resumas los 🔴 de nadie hasta perder el archivo y la línea: cópialos comp
 
 ## Agentes que se sumarán más adelante (todavía no existen; no los lances)
 
-- **`qa-pantallas`**, con el frontend nuevo (`docs/frontend.md`, fase F0): correrá las pruebas del frontend (Vitest y Playwright) y revisará computadora, iPad y celular, en modo día y noche. Aplicará cuando cambie **Pantallas**.
 - **`paridad-prototipo`**, con el frontend nuevo (F1 en adelante): comparará cada pantalla nueva con su equivalente del prototipo para que no se pierda ninguna regla ni flujo. Aplicará cuando cambie `frontend/**`.
 - **`preproduccion-legal`**, al preparar producción: revisará lo de §6 "Para después" de `docs/requisitos.md` (aviso de privacidad, consentimiento, contratos, respaldos, HTTPS, secretos, verificación en 2 pasos) antes de que entre cualquier dato real.

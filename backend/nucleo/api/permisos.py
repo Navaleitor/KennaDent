@@ -40,13 +40,13 @@ class TienePermisos(BasePermission):
     Con la contrasena inicial (o regenerada) no se puede usar nada: solo
     cambiarla (sesion/password/) y cerrar sesion, que no pasan por aqui."""
 
-    message = "No tienes permiso para esta accion."
+    message = "No tienes permiso para esta acción."
 
     def has_permission(self, request, view):
         if trabajador_de(request) is None:
             return False
         if request.user.debe_cambiar_password:
-            raise PermissionDenied("Antes de continuar, cambia tu contrasena inicial.")
+            raise PermissionDenied("Antes de continuar, cambia tu contraseña inicial.", code="cambiar_password")
         accion = getattr(view, "action", None)
         if accion is None:
             return True   # metodo sin accion (ej. DELETE de pacientes): DRF responde 405

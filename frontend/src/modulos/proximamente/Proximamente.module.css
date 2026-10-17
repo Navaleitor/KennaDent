@@ -1,0 +1,19 @@
+.vacio {
+  max-width: 520px;
+  margin: 8vh auto 0;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  color: var(--text-2);
+}
+.vacio :global(.ico) {
+  color: var(--acento);
+}
+.vacio h1 {
+  font-size: 24px;
+  color: var(--text);
+}
+.vacio p {
+  margin: 0;
+}

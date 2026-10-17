@@ -53,6 +53,10 @@ class ApiTest(APITestCase):
         self.assertEqual(datos["trabajador"]["nombre"], "DRA. ANDREA GARZA LEAL")
         self.assertIn("historial_editar", datos["permisos"])
         self.assertNotIn("dinero", datos["permisos"])
+        # Con nombres para la pantalla de inicio del frontend
+        self.assertEqual(datos["trabajador"]["puesto_nombre"], "Odontólogo(a) general")
+        self.assertIn("CUMBRES", [s["nombre"] for s in datos["sucursales"]])
+        self.assertEqual({p["id"] for p in datos["permisos_detalle"]}, set(datos["permisos"]))
 
     def test_contrasena_o_clinica_equivocada(self):
         r = self.client.post("/api/v1/sesion/", {"empresa": "demo", "usuario": "andrea.garza", "password": "mal"}, format="json")
@@ -78,13 +82,25 @@ class ApiTest(APITestCase):
         self.assertTrue(self.entrar("demo", "daniela.flores")["debe_cambiar_password"])
         r = self.client.get("/api/v1/pacientes/")
         self.assertEqual(r.status_code, 403)
-        self.assertIn("cambia tu contrasena", r.json()["detail"])
+        self.assertIn("cambia tu contraseña", r.json()["detail"])
+        self.assertEqual(r.json()["codigo"], "cambiar_password")   # el frontend manda a cambiarla
         r = self.client.post("/api/v1/sesion/password/", {"actual": CLAVE, "nueva": "NuevaClaveQA-2026"}, format="json")
         self.assertEqual(r.status_code, 200, r.content)
         self.assertEqual(self.client.get("/api/v1/pacientes/").status_code, 200)
 
     def test_sin_sesion_no_hay_datos(self):
-        self.assertEqual(self.client.get("/api/v1/pacientes/").status_code, 403)
+        # 401 (no 403): el frontend regresa a la entrada con el aviso de sesion cerrada
+        r = self.client.get("/api/v1/pacientes/")
+        self.assertEqual(r.status_code, 401)
+        self.assertEqual(r.json()["codigo"], "not_authenticated")
+        self.assertEqual(self.client.post("/api/v1/sesion/password/", {}, format="json").status_code, 401)
+
+    def test_esquema_openapi_solo_con_sesion(self):
+        self.assertEqual(self.client.get("/api/v1/esquema/").status_code, 401)
+        self.entrar("demo", "daniela.flores")
+        r = self.client.get("/api/v1/esquema/?format=json")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("/api/v1/sesion/", r.json()["paths"])
 
     def test_baja_de_personal_no_entra(self):
         Trabajador.objects.filter(pk=self.luis.pk).update(activo=False, baja_en=timezone.localdate())
@@ -142,7 +158,7 @@ class ApiTest(APITestCase):
         # Doctor de otra sucursal: rechazado por la base
         r = self.cita(unidad=self.unidad2, trabajador=self.paola, minutos=120)
         self.assertEqual(r.status_code, 400)
-        self.assertIn("no esta asignado", r.json()["detail"])
+        self.assertIn("no está asignado", r.json()["detail"])
         # Mismo doctor en otro sillon: se avisa diciendo cual cita es, y se permite si se confirma
         r = self.cita(unidad=self.unidad2)
         self.assertEqual(r.status_code, 409)
@@ -171,7 +187,7 @@ class ApiTest(APITestCase):
             "trabajador": self.andrea.id, "inicio": ayer.isoformat(),
             "fin": (ayer + timedelta(minutes=30)).isoformat()}, format="json")
         self.assertEqual(r.status_code, 400)
-        self.assertIn("ya paso", r.json()["inicio"][0])
+        self.assertIn("ya pasó", r.json()["inicio"][0])
         # Mover una cita al pasado tampoco; pero una cita pasada si se puede actualizar (estado, nota)
         nueva = self.cita().json()
         self.assertEqual(self.client.patch(f"/api/v1/citas/{nueva['id']}/", {"inicio": ayer.isoformat(),
