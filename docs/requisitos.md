@@ -60,7 +60,7 @@ Reglas de acceso acordadas (Issues #10 y #11):
 | Regla | Detalle |
 |---|---|
 | Dinero | Solo administración y gerencia (permiso "Ver precios, montos e ingresos") ven precios, ingresos, presupuestos con monto y reportes. |
-| Agenda del doctor | El personal clínico ve **solo su agenda**. Recepción, asistentes y gerencia ven la de todos. |
+| Agenda del doctor | El personal clínico ve **solo su agenda**. Recepción, asistentes y gerencia ven la de todos (de sus sucursales: sin "acceso a todas las sucursales" solo las asignadas, §6). |
 | Pacientes | Todo el personal clínico ve a **todos** los pacientes (por si atiende a uno de otro compañero). |
 | Registro de consulta | Solo el doctor **que atiende la cita** la registra; nadie registra por otro. Recepción no registra consultas. |
 | Recepción | Da de alta pacientes con datos generales (nombre, nacimiento, sexo, teléfono, correo, sucursal). **Ve** la alerta de alergias, pero **no** captura ni modifica datos clínicos. |
@@ -102,6 +102,7 @@ Reglas de acceso acordadas (Issues #10 y #11):
 ### 2.6 Caja
 - Una cita atendida con registro del doctor aparece **por cobrar**; recepción revisa lo que se hizo y cobra (efectivo con cambio, tarjeta o transferencia).
 - Entradas y salidas de dinero (compras, laboratorio, etc.).
+- **Pagos y movimientos no se editan ni se borran:** un error se corrige con otro movimiento, y queda registrado quién y cuándo.
 - **Corte diario:** fondo inicial + cobros en efectivo − gastos en efectivo = efectivo esperado; se compara con el efectivo contado (sobrante o faltante). Tarjeta y transferencias se concilian aparte. Al cerrar, ese día ya no admite movimientos. Se puede imprimir.
 
 ### 2.7 Seguimiento
@@ -127,7 +128,7 @@ Reglas de acceso acordadas (Issues #10 y #11):
 ## 3. Fases siguientes
 
 **Fase 2**
-- Inicio de sesión real con usuario y contraseña, y cambio obligatorio de contraseña al primer acceso.
+- Pantallas de inicio de sesión real y de cambio obligatorio de contraseña al primer acceso (la API ya lo aplica desde v0.6.0; las pantallas llegan con el frontend nuevo, fase F0).
 - Recordatorios por **WhatsApp** (API oficial de WhatsApp Business):
   - Al paciente, 24 h antes, pidiendo confirmar o cancelar.
   - A la recepcionista y al doctor, 15 min antes.
@@ -156,6 +157,8 @@ Decidido (octubre 2026): citas solo a las :00 y :30; no se agenda en el pasado; 
 Decidido (octubre 2026, v0.6.0): si el doctor ya tiene otra cita a esa hora, **se avisa diciendo cuál es y quien agenda decide** (al crear y al mover); el sillón ocupado sí se bloquea. Una cita **eliminada** no se borra de la base: queda con estado "eliminada", motivo, quién y cuándo, igual que la cancelada. Pagos y movimientos de dinero no se editan ni se borran: se corrigen con un movimiento nuevo (ya lo aplica la base).
 
 Decidido (octubre 2026): antes de cada pull request se corren dos **agentes de revisión** que solo reportan con semáforo y nunca corrigen ni unen (v0.5.1): `reglas-negocio` revisa que los cambios respeten las reglas de este documento y de `CLAUDE.md` (un 🔴 bloquea el PR) y `qa-backend` corre las pruebas automáticas del backend y del modelo de datos. Están en `.claude/agents/`.
+
+Decidido (octubre 2026, v0.6.0): se **amplía el equipo de agentes de revisión** con `seguridad-datos` (aislamiento entre clínicas, permisos, secretos y migraciones; consulta la base de QA solo en lectura), `docs-al-dia` (contradicciones entre documentos y código, sin decidir cuál vale) y `revisor-pr` (forma del PR: versión, CHANGELOG, "Fixes #N", sin firmas), coordinados por el agente `revision` (comando `/revision`), que lanza solo los que aplican según lo que cambió. Todos son de solo lectura: un hook (`.claude/hooks/solo_lectura.py`) bloquea cualquier comando que no sea de consulta. `reglas-negocio` reporta como 🟡 "pendiente conocido" lo que ya está decidido pero no programado; 🔴 queda para código nuevo que contradice una regla o rompe algo que ya funcionaba. **Para después:** `qa-pantallas` y `paridad-prototipo` (con el frontend nuevo, `docs/frontend.md`) y `preproduccion-legal` (al preparar producción).
 
 ## 6. Decisiones de octubre 2026 (backend, seguridad y reglas)
 

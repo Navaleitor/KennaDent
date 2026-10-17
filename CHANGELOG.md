@@ -29,6 +29,12 @@ La API cumple las reglas de acceso y de agenda decididas en octubre (sección 6 
 
 ### Agentes y documentos
 - `reglas-negocio` marca como 🟡 "pendiente conocido" una regla que todavía falta, si ya está anotada para una entrega futura y el cambio no la empeora. Las decisiones anotadas son definitivas: Kenia y su hermano deciden con el mismo peso (también en `CLAUDE.md`).
+- **Equipo de agentes ampliado**, coordinado por `/revision` (agente `revision`), que lanza solo los que aplican según lo que cambió y junta un solo reporte:
+  - `seguridad-datos`: aislamiento entre clínicas, permisos por vista, secretos y migraciones nuevas; consulta la base de QA solo en lectura;
+  - `docs-al-dia`: contradicciones entre documentos y código, citando las dos partes;
+  - `revisor-pr`: checklist de forma del PR (versión, CHANGELOG, "Fixes #N", sin firmas).
+- **Hook de solo lectura** (`.claude/hooks/solo_lectura.py`): ningún agente de revisión puede escribir. Bloquea todo comando que no sea de consulta y aprueba solo los de consulta. Antes, la lista de herramientas de los agentes no limitaba Bash de verdad.
+- `reglas-negocio`: 🔴 solo para código nuevo que contradice una regla o rompe algo que ya funcionaba.
 - `qa-backend` no guarda la salida en archivos, ni siquiera temporales. Se corrigió la referencia a su paso 3 (verificación desde cero), que ya se probó: migraciones 0001 a 0005 y demo sin errores.
 - Regla aclarada en `CLAUDE.md` y `docs/requisitos.md`: doctor ocupado = se avisa y quien agenda decide. También se quitó la contradicción sobre la entrada con correo.
 

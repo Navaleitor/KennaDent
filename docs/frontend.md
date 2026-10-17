@@ -71,7 +71,7 @@ Cada módulo tiene sus pantallas, sus componentes propios y sus pruebas juntos. 
 Las reglas del negocio son las de `CLAUDE.md` y `docs/requisitos.md`; aquí, cómo se aplican en el frontend:
 
 1. **La seguridad real está en la API y en la base.** El frontend oculta lo que no corresponde (por comodidad), pero nunca es la única protección.
-2. **Permisos** desde `GET /api/v1/sesion/` (`permisos`, `sucursales`). Un solo ayudante, `usePuede("dinero")`, decide qué se muestra. Sin el permiso `dinero` no se muestran precios, montos ni ingresos.
+2. **Permisos** desde `GET /api/v1/sesion/` (`permisos`, `sucursales`). Un solo ayudante, `usePuede("dinero")`, decide qué se muestra. Sin el permiso `dinero` no se muestran precios, montos ni ingresos (salvo el monto a cobrar de cada paciente, que recepción ve para cobrar; requisitos §2.2).
 3. **Sesión:**
    - Si la API responde que no hay sesión (30 minutos sin uso), se vuelve a la pantalla de entrada con un aviso.
    - Si responde "cambia tu contraseña inicial", se va a la pantalla de cambio de contraseña y no se deja usar nada más.
@@ -100,4 +100,4 @@ Las reglas del negocio son las de `CLAUDE.md` y `docs/requisitos.md`; aquí, có
 | **F3 en adelante** | Consulta y odontograma, presupuestos, caja, inventario, reportes, personal, empresa | Se hace primero la parte de la API de cada módulo y luego sus pantallas |
 
 - **Al terminar F1 y F2**, ya se puede probar con datos compartidos: varias personas en distintos dispositivos sobre la misma base. Puede ser con el entorno local expuesto de forma privada (Tailscale) o con un QA en la nube.
-- **Cada PR** pasa por los agentes `reglas-negocio` y `qa-backend`. En la F0 se agrega un agente `qa-frontend` que corre las pruebas del frontend.
+- **Cada PR** pasa por la revisión de los agentes (`/revision`). En la F0 se agrega `qa-pantallas`, que corre las pruebas del frontend en computadora, iPad y celular. Desde la F1 se agrega `paridad-prototipo`, que compara cada pantalla nueva con el prototipo para no perder reglas ni flujos.

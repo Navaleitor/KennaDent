@@ -10,7 +10,7 @@ Con **un solo comando** levantas en tu laptop:
 | **pgAdmin** | http://localhost:5050 | Ver y consultar la base de datos |
 | **Base de datos** PostgreSQL 16 | `localhost:5433` | Para conectar tu propio pgAdmin |
 
-> **Importante:** el prototipo web **todavía no usa la API**. Sigue guardando en el navegador. Conectar cada pantalla a la API es el siguiente paso. Hoy la API ya se puede probar desde el navegador (ver sección 5) y con las pruebas automáticas.
+> **Importante:** el prototipo web **no usa la API**: guarda en el navegador y se queda como demo. Las pantallas que sí usan la API son las del frontend nuevo en React (`docs/frontend.md`), que se construye por fases. Hoy la API ya se puede probar desde el navegador (ver sección 5) y con las pruebas automáticas.
 
 Todo corre dentro de **Docker**. Docker crea "computadoras miniatura" (contenedores) con todo instalado: no instalas PostgreSQL ni Python en tu sistema. Es la misma tecnología con la que después se sube a la nube.
 
@@ -49,12 +49,6 @@ Si los tres responden con un número de versión, está listo.
 ```
 git clone https://github.com/Navaleitor/KennaDent.git
 cd KennaDent
-```
-
-Mientras la rama de este trabajo no esté en `main`, cámbiate a ella:
-
-```
-git checkout ccr-588b4f9e-wt1g3f
 ```
 
 ## 3. Poner tus contraseñas (una sola vez)
