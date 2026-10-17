@@ -155,7 +155,12 @@ Decidido (septiembre 2026): la agenda es por unidad; el doctor ve solo su agenda
 
 Decidido (octubre 2026): citas solo a las :00 y :30; no se agenda en el pasado; al eliminar **o** cancelar una cita se pide motivo, la cita desaparece de la agenda y queda en el historial del paciente; puede hacerlo quien edita la agenda (v0.4.0, #18 y #19).
 
-Decidido (octubre 2026, v0.6.0): si el doctor ya tiene otra cita a esa hora, **se avisa diciendo cuál es y quien agenda decide** (al crear y al mover); el sillón ocupado sí se bloquea. Si esa otra cita es de una **sucursal que la persona no puede ver**, el aviso dice **solo el horario y la sucursal**, sin paciente ni tratamiento. Una cita **eliminada** no se borra de la base: queda con estado "eliminada", motivo, quién y cuándo, igual que la cancelada. Pagos y movimientos de dinero no se editan ni se borran: se corrigen con un movimiento nuevo (ya lo aplica la base).
+Decidido (octubre 2026, v0.6.0): si el doctor ya tiene otra cita a esa hora, **se avisa diciendo cuál es y quien agenda decide** (al crear y al mover); el sillón ocupado sí se bloquea. Si esa otra cita es de una **sucursal que la persona no puede ver**, el aviso dice **solo el horario y la sucursal**, sin paciente ni tratamiento. Una cita **eliminada** no se borra de la base: queda con estado "eliminada", motivo, quién y cuándo, igual que la cancelada. Pagos y movimientos de dinero no se editan ni se borran: se corrigen con un movimiento nuevo (ya lo aplica la base). Dentro de las sucursales que sí ve, el aviso del doctor ocupado es completo (paciente, tratamiento y unidad), aunque la persona no tenga el permiso de ver la agenda de todo el equipo.
+
+Decidido (octubre 2026, v0.6.0), otras reglas de la agenda:
+- Un doctor **siempre ve sus propias citas**, aunque sean de una sucursal que ya no tiene asignada.
+- Una cita **cancelada o eliminada ya no se modifica ni se reactiva**: para volver a atender al paciente se agenda una cita nueva, y la cancelada queda en el historial tal cual.
+- A una cita **pasada** no se le cambia la hora ni el día, pero **sí el sillón** (para corregir dónde se atendió), además del estado y la nota.
 
 Decidido (octubre 2026): antes de cada pull request se corren dos **agentes de revisión** que solo reportan con semáforo y nunca corrigen ni unen (v0.5.1): `reglas-negocio` revisa que los cambios respeten las reglas de este documento y de `CLAUDE.md` (un 🔴 bloquea el PR) y `qa-backend` corre las pruebas automáticas del backend y del modelo de datos. Están en `.claude/agents/`.
 

@@ -179,6 +179,15 @@ class ApiTest(APITestCase):
         pasada = Cita.objects.filter(sucursal=self.cumbres, estado="atendida").first()
         r = self.client.patch(f"/api/v1/citas/{pasada.id}/", {"nota": "Revisado"}, format="json")
         self.assertEqual(r.status_code, 200, r.content)
+        # Cambiar solo el sillón de una cita pasada sí se permite (corregir dónde se atendió)
+        activas = Cita.objects.exclude(estado__in=["cancelada", "eliminada", "no_asistio"])
+        for pasada in Cita.objects.filter(sucursal=self.cumbres, estado="atendida").order_by("-inicio")[:50]:
+            otra = next((u for u in Unidad.objects.filter(sucursal=self.cumbres).exclude(pk=pasada.unidad_id)
+                         if not activas.filter(unidad=u, inicio__lt=pasada.fin, fin__gt=pasada.inicio).exists()), None)
+            if otra:
+                break
+        r = self.client.patch(f"/api/v1/citas/{pasada.id}/", {"unidad": otra.id}, format="json")
+        self.assertEqual(r.status_code, 200, r.content)
 
     def test_cancelar_y_eliminar_piden_motivo(self):
         self.entrar("demo", "daniela.flores")

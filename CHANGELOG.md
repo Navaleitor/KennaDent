@@ -22,7 +22,8 @@ La API cumple las reglas de acceso y de agenda decididas en octubre (sección 6 
 - **Cancelar y eliminar citas en la API** (`/citas/{id}/cancelar/` y `/eliminar/`), siempre con motivo, quién y cuándo. Salen de la agenda y quedan en el historial del paciente (`?paciente=&bajas=1`, sin límite de fechas).
 - La base ya **no deja borrar citas** y exige el motivo en las canceladas o eliminadas. Las canceladas que ya existían quedaron con "Sin motivo registrado".
 - En el admin de plataforma las citas son **solo de consulta**, para que nadie se salte las reglas de la agenda.
-- El aviso del doctor ocupado sale al crear o al cambiar hora, duración o doctor; no al cambiar solo la nota o el estado.
+- El aviso del doctor ocupado sale al crear o al cambiar hora, duración o doctor; no al cambiar solo la nota o el estado (también en el prototipo).
+- A una cita pasada se le puede cambiar el sillón (no la hora). Una cancelada o eliminada ya no se modifica ni se reactiva. Un doctor siempre ve sus propias citas. Anotado en `docs/requisitos.md`.
 - 8 pruebas automáticas nuevas de la API (21 en total) y 2 casos nuevos en las pruebas SQL (29 rechazos esperados).
 
 ### Decidido

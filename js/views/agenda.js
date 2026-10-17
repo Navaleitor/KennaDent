@@ -224,7 +224,8 @@ function activarCita(el, editar, sucId) {
       window.removeEventListener("pointerup", soltar);
       if (!movido) { if (!redimensionar) KD.detalleCita(id); return; }
       const cambios = redimensionar ? { duracion: nuevaDur } : { hora: KD.aHora(nuevoIni), fecha: colDestino.dataset.fecha, unidad: Number(colDestino.dataset.unidad) };
-      if (!redimensionar && enPasado(cambios.fecha, cambios.hora)) { KD.toast("No se puede mover una cita a un día u hora que ya pasó.", "bad"); KD.render(); return; }
+      // Al pasado no se mueve; cambiar solo el sillón de una cita pasada sí se permite
+      if (!redimensionar && (cambios.fecha !== c.fecha || cambios.hora !== c.hora) && enPasado(cambios.fecha, cambios.hora)) { KD.toast("No se puede mover una cita a un día u hora que ya pasó.", "bad"); KD.render(); return; }
       const prueba = { ...c, ...cambios };
       const choque = choqueUnidad(prueba);
       if (choque) { KD.toast(choque, "bad"); KD.render(); return; }

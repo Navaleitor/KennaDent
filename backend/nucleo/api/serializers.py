@@ -180,12 +180,12 @@ class CitaSerializer(serializers.ModelSerializer):
 
         # Horario: solo a las :00 y :30 y nunca en el pasado, al crear o al mover (requisitos 2.3)
         nueva_hora = cita is None or ("inicio" in datos and datos["inicio"] != cita.inicio)
-        nueva_unidad = cita is not None and "unidad" in datos and datos["unidad"] != cita.unidad
         if inicio and nueva_hora:
             local = timezone.localtime(inicio)
             if local.minute not in (0, 30) or local.second or local.microsecond:
                 raise serializers.ValidationError({"inicio": "Las citas empiezan solo a las :00 o a las :30."})
-        if inicio and (nueva_hora or nueva_unidad) and inicio <= timezone.now():
+        # Cambiar solo el sillón de una cita pasada sí se permite (corregir dónde se atendió)
+        if inicio and nueva_hora and inicio <= timezone.now():
             raise serializers.ValidationError({"inicio": "No se puede agendar ni mover una cita a un dia u hora que ya paso."})
 
         cambia_agenda = cita is None or any(k in datos and datos[k] != getattr(cita, k) for k in ("inicio", "fin", "trabajador"))
