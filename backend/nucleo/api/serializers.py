@@ -184,8 +184,10 @@ class CitaSerializer(serializers.ModelSerializer):
         if inicio and (nueva_hora or nueva_unidad) and inicio <= timezone.now():
             raise serializers.ValidationError({"inicio": "No se puede agendar ni mover una cita a un dia u hora que ya paso."})
 
-        if inicio and fin and trabajador and not confirmar:
+        cambia_agenda = cita is None or any(k in datos and datos[k] != getattr(cita, k) for k in ("inicio", "fin", "trabajador"))
+        if inicio and fin and trabajador and cambia_agenda and not confirmar:
             # El doctor en dos lugares a la vez: se avisa diciendo cual cita es y quien agenda decide
+            # (solo al crear o al cambiar hora, duracion o doctor; no al cambiar la nota o el estado)
             choque = (Cita.objects.filter(trabajador=trabajador, inicio__lt=fin, fin__gt=inicio)
                       .exclude(estado__in=ESTADOS_LIBERAN_SILLON)
                       .select_related("paciente", "tratamiento", "tipo_cita", "unidad").order_by("inicio"))

@@ -211,7 +211,7 @@ class CitaViewSet(BaseEmpresa, mixins.CreateModelMixin, mixins.UpdateModelMixin,
     """Agenda. ?desde=&hasta= (fechas ISO), ?sucursal=, ?trabajador=, ?unidad=, ?paciente=.
     Sin "agenda_todas" cada persona ve solo sus citas; sin "todas_sucursales",
     solo las de sus sucursales (y siempre las suyas). Las canceladas y eliminadas
-    no salen en la agenda; para el historial del paciente: ?paciente=&bajas=1.
+    no salen en la agenda; historial completo del paciente: ?paciente=&bajas=1 (sin fechas).
     Cancelar o eliminar: POST /citas/{id}/cancelar/ o /eliminar/ con {motivo}."""
 
     serializer_class = CitaSerializer
@@ -234,13 +234,16 @@ class CitaViewSet(BaseEmpresa, mixins.CreateModelMixin, mixins.UpdateModelMixin,
             if qp.get("bajas") != "1":
                 qs = qs.exclude(estado__in=ESTADOS_BAJA_CITA)
             desde, hasta = parse_datetime(qp.get("desde", "") or ""), parse_datetime(qp.get("hasta", "") or "")
-            if not desde or not hasta:
-                from rest_framework.exceptions import ValidationError
-                raise ValidationError({"detail": "Indica desde y hasta (fecha y hora ISO, ej. 2026-10-08T00:00:00-06:00)."})
-            if (hasta - desde).days > 62:
-                from rest_framework.exceptions import ValidationError
-                raise ValidationError({"detail": "El rango maximo es de 62 dias."})
-            qs = qs.filter(inicio__lt=hasta, fin__gt=desde)
+            # El historial de UN paciente se puede pedir completo, sin fechas
+            if not (qp.get("paciente") and not qp.get("desde") and not qp.get("hasta")):
+                if not desde or not hasta:
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError({"detail": "Indica desde y hasta (fecha y hora ISO, ej. 2026-10-08T00:00:00-06:00), "
+                                                     "o solo ?paciente= para su historial completo."})
+                if (hasta - desde).days > 62:
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError({"detail": "El rango maximo es de 62 dias."})
+                qs = qs.filter(inicio__lt=hasta, fin__gt=desde)
             for campo in ("sucursal", "trabajador", "unidad", "paciente"):
                 if qp.get(campo):
                     qs = qs.filter(**{f"{campo}_id": qp[campo]})

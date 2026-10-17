@@ -18,8 +18,10 @@ La API cumple las reglas de acceso y de agenda decididas en octubre (sección 6 
 - **Doctor con otra cita a esa hora:** se avisa diciendo cuál es (horario, tratamiento, paciente y unidad) y quien agenda decide. En el prototipo, "Nueva cita" ya ofrece esas horas marcadas como "doctor con otra cita" y avisa antes de guardar; al arrastrar una cita pide confirmación. Antes el prototipo no lo permitía.
 
 ### Agregado
-- **Cancelar y eliminar citas en la API** (`/citas/{id}/cancelar/` y `/eliminar/`), siempre con motivo, quién y cuándo. Salen de la agenda y quedan en el historial del paciente (`?paciente=&bajas=1`).
+- **Cancelar y eliminar citas en la API** (`/citas/{id}/cancelar/` y `/eliminar/`), siempre con motivo, quién y cuándo. Salen de la agenda y quedan en el historial del paciente (`?paciente=&bajas=1`, sin límite de fechas).
 - La base ya **no deja borrar citas** y exige el motivo en las canceladas o eliminadas. Las canceladas que ya existían quedaron con "Sin motivo registrado".
+- En el admin de plataforma las citas son **solo de consulta**, para que nadie se salte las reglas de la agenda.
+- El aviso del doctor ocupado sale al crear o al cambiar hora, duración o doctor; no al cambiar solo la nota o el estado.
 - 6 pruebas automáticas nuevas de la API (19 en total) y 2 casos nuevos en las pruebas SQL (29 rechazos esperados).
 
 ### Agentes y documentos

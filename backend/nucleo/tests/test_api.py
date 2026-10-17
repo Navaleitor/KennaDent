@@ -148,7 +148,11 @@ class ApiTest(APITestCase):
         self.assertEqual(r.status_code, 409)
         self.assertIn("DRA. ANDREA GARZA LEAL ya tiene una cita de 07:00 a 07:30", r.json()["detail"])
         self.assertIn(self.unidad1.nombre, r.json()["detail"])
-        self.assertEqual(self.cita(unidad=self.unidad2, confirmar_empalme=True).status_code, 201)
+        empalmada = self.cita(unidad=self.unidad2, confirmar_empalme=True)
+        self.assertEqual(empalmada.status_code, 201)
+        # Ya aceptada, cambiar solo la nota no vuelve a avisar
+        r = self.client.patch(f"/api/v1/citas/{empalmada.json()['id']}/", {"nota": "Confirmado"}, format="json")
+        self.assertEqual(r.status_code, 200, r.content)
         # Lo rechazado no dejo nada guardado
         self.assertEqual(Cita.objects.filter(inicio__gte=self.libre, inicio__lt=self.libre + timedelta(hours=3)).count(), 2)
 
@@ -194,8 +198,9 @@ class ApiTest(APITestCase):
         rango = f"desde={self.libre.date()}T00:00:00-06:00&hasta={self.libre.date()}T23:59:00-06:00"
         ids = {c["id"] for c in self.client.get(f"/api/v1/citas/?{rango}").json()}
         self.assertEqual(ids & {cita["id"], otra["id"]}, {otra["id"]})
-        historial = self.client.get(f"/api/v1/citas/?{rango}&paciente={self.paciente_demo.id}&bajas=1").json()
+        historial = self.client.get(f"/api/v1/citas/?paciente={self.paciente_demo.id}&bajas=1").json()   # sin fechas
         self.assertIn(cita["id"], {c["id"] for c in historial})
+        self.assertEqual(self.client.get(f"/api/v1/citas/?paciente={self.paciente_demo.id}").status_code, 200)
         # Una cancelada ya no se modifica
         self.assertEqual(self.client.patch(f"/api/v1/citas/{cita['id']}/", {"nota": "x"}, format="json").status_code, 400)
         # Eliminar = estado "eliminada" con motivo; el renglon nunca se borra
@@ -245,6 +250,10 @@ class ApiTest(APITestCase):
         r = self.client.get("/admin/nucleo/empresa/")
         self.assertContains(r, "GRUPO DENTAL DEMO")
         self.assertContains(r, "CLINICA AISLAMIENTO")
+        # Las citas en el admin son solo de consulta: las reglas de la agenda viven en la API
+        cita = Cita.objects.order_by("id").first()
+        self.assertEqual(self.client.get(f"/admin/nucleo/cita/{cita.id}/change/").status_code, 200)
+        self.assertEqual(self.client.post(f"/admin/nucleo/cita/{cita.id}/change/", {"estado": "cancelada"}).status_code, 403)
 
     def test_personal_de_clinica_no_entra_al_admin(self):
         self.entrar("demo", "kenia.navarro")
