@@ -2,6 +2,7 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import F, Q
+from django.db.models.expressions import DatabaseDefault
 
 from .base import AHORA, HOY, DeEmpresa, check, en, fk, unico
 
@@ -141,6 +142,9 @@ class Trabajador(DeEmpresa):
     nombre = models.TextField()              # en MAYUSCULAS
     sexo = models.CharField(max_length=1, null=True, blank=True)
     lleva_titulo = models.BooleanField(db_default=False)
+    # Atiende pacientes (puede tener citas a su nombre). Se decide por persona: al darla de alta
+    # se copia de su puesto, y se puede activar, por ejemplo, a un administrador que es dentista.
+    atiende = models.BooleanField(db_default=False)
     especialidad = models.TextField(null=True, blank=True)
     cedula = models.TextField(null=True, blank=True)
     telefono = models.TextField(null=True, blank=True)
@@ -161,6 +165,12 @@ class Trabajador(DeEmpresa):
             check("trabajador_sexo_check", en("sexo", ["F", "M"])),
             check("trabajador_baja_check", Q(activo=True) | Q(baja_en__isnull=False)),
         ]
+
+    def save(self, *args, **kwargs):
+        # Al darlo de alta sin indicar si atiende, se copia de su puesto (como KD.atiende en el prototipo)
+        if self._state.adding and isinstance(self.atiende, DatabaseDefault):
+            self.atiende = self.puesto.atiende
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.nombre_completo

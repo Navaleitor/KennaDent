@@ -55,6 +55,17 @@ class CitaAdmin(admin.ModelAdmin):
     list_filter = ["empresa", "estado", "sucursal"]
     date_hierarchy = "inicio"
 
+    # Solo consulta: las citas se crean, mueven, cancelan y eliminan por la API, que aplica
+    # las reglas de la agenda (:00/:30, sin pasado, motivo). Nunca se borran (cita_no_borrar).
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(m.Tratamiento)
 class TratamientoAdmin(admin.ModelAdmin):

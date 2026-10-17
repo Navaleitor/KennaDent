@@ -7,6 +7,7 @@ from datetime import timedelta
 
 from django.core.cache import cache
 from django.core.management import call_command
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -59,6 +60,28 @@ class ApiTest(APITestCase):
         # Mismo usuario, otra clinica: no existe alli
         r = self.client.post("/api/v1/sesion/", {"empresa": "aislamiento", "usuario": "andrea.garza", "password": CLAVE}, format="json")
         self.assertEqual(r.status_code, 400)
+
+    def test_sin_entrada_por_correo(self):
+        Usuario.objects.filter(login="demo/andrea.garza").update(email="andrea@ejemplo.mx")
+        r = self.client.post("/api/v1/sesion/", {"email": "andrea@ejemplo.mx", "password": CLAVE}, format="json")
+        self.assertEqual(r.status_code, 400)
+
+    def test_sesion_se_cierra_tras_30_minutos_sin_uso(self):
+        self.entrar("demo", "andrea.garza")
+        self.assertEqual(self.client.cookies["sessionid"]["max-age"], 30 * 60)
+        # Cada peticion vuelve a contar los 30 minutos (la cookie se renueva)
+        r = self.client.get("/api/v1/sesion/")
+        self.assertEqual(r.cookies["sessionid"]["max-age"], 30 * 60)
+
+    def test_contrasena_inicial_bloquea_todo_hasta_cambiarla(self):
+        Usuario.objects.filter(login="demo/daniela.flores").update(debe_cambiar_password=True)
+        self.assertTrue(self.entrar("demo", "daniela.flores")["debe_cambiar_password"])
+        r = self.client.get("/api/v1/pacientes/")
+        self.assertEqual(r.status_code, 403)
+        self.assertIn("cambia tu contrasena", r.json()["detail"])
+        r = self.client.post("/api/v1/sesion/password/", {"actual": CLAVE, "nueva": "NuevaClaveQA-2026"}, format="json")
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(self.client.get("/api/v1/pacientes/").status_code, 200)
 
     def test_sin_sesion_no_hay_datos(self):
         self.assertEqual(self.client.get("/api/v1/pacientes/").status_code, 403)
@@ -113,22 +136,136 @@ class ApiTest(APITestCase):
         self.entrar("demo", "daniela.flores")
         self.assertEqual(self.cita().status_code, 201)
         # Mismo sillon, mismo horario: rechazado
-        r = self.cita(trabajador=self.luis, minutos=15)
+        r = self.cita(trabajador=self.luis)
         self.assertEqual(r.status_code, 409)
         self.assertIn("unidad ya tiene una cita", r.json()["detail"])
         # Doctor de otra sucursal: rechazado por la base
         r = self.cita(unidad=self.unidad2, trabajador=self.paola, minutos=120)
         self.assertEqual(r.status_code, 400)
         self.assertIn("no esta asignado", r.json()["detail"])
-        # Mismo doctor en otro sillon: se avisa y se permite si se confirma
-        self.assertEqual(self.cita(unidad=self.unidad2, minutos=10).status_code, 409)
-        self.assertEqual(self.cita(unidad=self.unidad2, minutos=10, confirmar_empalme=True).status_code, 201)
+        # Mismo doctor en otro sillon: se avisa diciendo cual cita es, y se permite si se confirma
+        r = self.cita(unidad=self.unidad2)
+        self.assertEqual(r.status_code, 409)
+        self.assertIn("DRA. ANDREA GARZA LEAL ya tiene una cita de 07:00 a 07:30", r.json()["detail"])
+        self.assertIn(self.unidad1.nombre, r.json()["detail"])
+        empalmada = self.cita(unidad=self.unidad2, confirmar_empalme=True)
+        self.assertEqual(empalmada.status_code, 201)
+        # Ya aceptada, cambiar solo la nota no vuelve a avisar
+        r = self.client.patch(f"/api/v1/citas/{empalmada.json()['id']}/", {"nota": "Confirmado"}, format="json")
+        self.assertEqual(r.status_code, 200, r.content)
         # Lo rechazado no dejo nada guardado
         self.assertEqual(Cita.objects.filter(inicio__gte=self.libre, inicio__lt=self.libre + timedelta(hours=3)).count(), 2)
 
     def test_doctor_sin_agenda_editar_no_agenda(self):
         self.entrar("demo", "andrea.garza")
         self.assertEqual(self.cita().status_code, 403)
+
+    def test_solo_a_las_00_y_30_y_nunca_en_el_pasado(self):
+        self.entrar("demo", "daniela.flores")
+        r = self.cita(minutos=15)
+        self.assertEqual(r.status_code, 400)
+        self.assertIn(":00 o a las :30", r.json()["inicio"][0])
+        ayer = (timezone.localtime() - timedelta(days=1)).replace(hour=10, minute=0, second=0, microsecond=0)
+        r = self.client.post("/api/v1/citas/", {
+            "sucursal": self.cumbres.id, "unidad": self.unidad1.id, "paciente": self.paciente_demo.id,
+            "trabajador": self.andrea.id, "inicio": ayer.isoformat(),
+            "fin": (ayer + timedelta(minutes=30)).isoformat()}, format="json")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("ya paso", r.json()["inicio"][0])
+        # Mover una cita al pasado tampoco; pero una cita pasada si se puede actualizar (estado, nota)
+        nueva = self.cita().json()
+        self.assertEqual(self.client.patch(f"/api/v1/citas/{nueva['id']}/", {"inicio": ayer.isoformat(),
+                         "fin": (ayer + timedelta(minutes=30)).isoformat()}, format="json").status_code, 400)
+        pasada = Cita.objects.filter(sucursal=self.cumbres, estado="atendida").first()
+        r = self.client.patch(f"/api/v1/citas/{pasada.id}/", {"nota": "Revisado"}, format="json")
+        self.assertEqual(r.status_code, 200, r.content)
+        # Cambiar solo el sillón de una cita pasada sí se permite (corregir dónde se atendió)
+        activas = Cita.objects.exclude(estado__in=["cancelada", "eliminada", "no_asistio"])
+        for pasada in Cita.objects.filter(sucursal=self.cumbres, estado="atendida").order_by("-inicio")[:50]:
+            otra = next((u for u in Unidad.objects.filter(sucursal=self.cumbres).exclude(pk=pasada.unidad_id)
+                         if not activas.filter(unidad=u, inicio__lt=pasada.fin, fin__gt=pasada.inicio).exists()), None)
+            if otra:
+                break
+        r = self.client.patch(f"/api/v1/citas/{pasada.id}/", {"unidad": otra.id}, format="json")
+        self.assertEqual(r.status_code, 200, r.content)
+
+    def test_cancelar_y_eliminar_piden_motivo(self):
+        self.entrar("demo", "daniela.flores")
+        cita = self.cita().json()
+        # Sin motivo, o por la via normal de edicion: no
+        self.assertEqual(self.client.post(f"/api/v1/citas/{cita['id']}/cancelar/", {}, format="json").status_code, 400)
+        self.assertEqual(self.client.patch(f"/api/v1/citas/{cita['id']}/", {"estado": "cancelada"},
+                                           format="json").status_code, 400)
+        r = self.client.post(f"/api/v1/citas/{cita['id']}/cancelar/", {"motivo": "El paciente cancelo"}, format="json")
+        self.assertEqual(r.status_code, 200, r.content)
+        datos = r.json()
+        self.assertEqual((datos["estado"], datos["baja_motivo"]), ("cancelada", "El paciente cancelo"))
+        self.assertEqual(datos["baja_por"], Trabajador.objects.get(usuario__login="demo/daniela.flores").id)
+        self.assertIsNotNone(datos["baja_en"])
+        # Libera el sillon, sale de la agenda y queda en el historial del paciente
+        otra = self.cita().json()
+        rango = f"desde={self.libre.date()}T00:00:00-06:00&hasta={self.libre.date()}T23:59:00-06:00"
+        ids = {c["id"] for c in self.client.get(f"/api/v1/citas/?{rango}").json()}
+        self.assertEqual(ids & {cita["id"], otra["id"]}, {otra["id"]})
+        historial = self.client.get(f"/api/v1/citas/?paciente={self.paciente_demo.id}&bajas=1").json()   # sin fechas
+        self.assertIn(cita["id"], {c["id"] for c in historial})
+        self.assertEqual(self.client.get(f"/api/v1/citas/?paciente={self.paciente_demo.id}").status_code, 200)
+        # Una cancelada ya no se modifica
+        self.assertEqual(self.client.patch(f"/api/v1/citas/{cita['id']}/", {"nota": "x"}, format="json").status_code, 400)
+        # Eliminar = estado "eliminada" con motivo; el renglon nunca se borra
+        r = self.client.post(f"/api/v1/citas/{otra['id']}/eliminar/", {"motivo": "Error de captura"}, format="json")
+        self.assertEqual(r.json()["estado"], "eliminada")
+        with self.assertRaises(Exception), transaction.atomic():
+            Cita.objects.filter(pk=otra["id"]).delete()
+        self.assertTrue(Cita.objects.filter(pk=otra["id"]).exists())
+
+    def test_administradora_dentista_atiende_y_quien_no_atiende_no_tiene_citas(self):
+        kenia = Trabajador.objects.get(nombre="KENIA NAVARRO")       # administradora general y dentista
+        self.entrar("demo", "daniela.flores")
+        doctores = {d["id"] for d in self.client.get("/api/v1/personal/?atiende=1").json()}
+        self.assertIn(kenia.id, doctores)
+        self.assertEqual(self.cita(trabajador=kenia).status_code, 201)
+        # Recepción no atiende: no se le puede agendar una cita
+        daniela = Trabajador.objects.get(usuario__login="demo/daniela.flores")
+        self.assertNotIn(daniela.id, doctores)
+        r = self.cita(trabajador=daniela, unidad=self.unidad2)
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("no atiende pacientes", r.json()["trabajador"][0])
+        # Al dar de alta a alguien sin indicarlo, "atiende" se copia de su puesto
+        nuevo_doc = Trabajador.objects.create(empresa_id=kenia.empresa_id, puesto_id="odontologo", nombre="NUEVO DOCTOR")
+        nueva_rec = Trabajador.objects.create(empresa_id=kenia.empresa_id, puesto_id="recepcion", nombre="NUEVA RECEPCION")
+        self.assertEqual((nuevo_doc.atiende, nueva_rec.atiende), (True, False))
+
+    def test_aviso_de_otra_sucursal_solo_dice_horario_y_sucursal(self):
+        # MARIANA atiende en CUMBRES y SAN PEDRO; ya tiene cita en SAN PEDRO a esa hora
+        mariana = Trabajador.objects.get(nombre="MARIANA CANTU RIOS")
+        san_pedro = Sucursal.objects.get(nombre="SAN PEDRO")
+        Cita.objects.create(empresa_id=self.cumbres.empresa_id, sucursal=san_pedro, trabajador=mariana,
+                            unidad=Unidad.objects.filter(sucursal=san_pedro).first(), paciente=self.paciente_demo,
+                            inicio=self.libre, fin=self.libre + timedelta(minutes=30))
+        self.entrar("demo", "carlos.martinez")           # gerente de CUMBRES: no ve SAN PEDRO
+        r = self.cita(trabajador=mariana)
+        self.assertEqual(r.status_code, 409)
+        aviso = r.json()["detail"]
+        self.assertIn("ya tiene una cita de 07:00 a 07:30 en la sucursal SAN PEDRO", aviso)
+        self.assertNotIn(self.paciente_demo.nombre, aviso)
+        self.client.delete("/api/v1/sesion/")
+        self.entrar("demo", "kenia.navarro")             # administradora: ve todas, aviso completo
+        self.assertIn(self.paciente_demo.nombre, self.cita(trabajador=mariana).json()["detail"])
+
+    def test_gerente_ve_y_agenda_solo_en_su_sucursal(self):
+        hoy = timezone.localdate()
+        rango = f"desde={hoy - timedelta(days=7)}T00:00:00-06:00&hasta={hoy}T23:59:00-06:00"
+        self.entrar("demo", "carlos.martinez")           # gerente de CUMBRES
+        sucursales = {c["sucursal"] for c in self.client.get(f"/api/v1/citas/?{rango}").json()}
+        self.assertEqual(sucursales, {self.cumbres.id})
+        centro = Sucursal.objects.get(nombre="CENTRO")
+        r = self.cita(unidad=Unidad.objects.filter(sucursal=centro).first(), trabajador=self.paola, sucursal=centro.id)
+        self.assertEqual(r.status_code, 403)
+        self.client.delete("/api/v1/sesion/")
+        self.entrar("demo", "kenia.navarro")             # administradora: todas las sucursales
+        sucursales = {c["sucursal"] for c in self.client.get(f"/api/v1/citas/?{rango}").json()}
+        self.assertGreater(len(sucursales), 1)
 
     # ---------- Pacientes ----------
     def test_alta_baja_y_bitacora_de_pacientes(self):
@@ -156,6 +293,10 @@ class ApiTest(APITestCase):
         r = self.client.get("/admin/nucleo/empresa/")
         self.assertContains(r, "GRUPO DENTAL DEMO")
         self.assertContains(r, "CLINICA AISLAMIENTO")
+        # Las citas en el admin son solo de consulta: las reglas de la agenda viven en la API
+        cita = Cita.objects.order_by("id").first()
+        self.assertEqual(self.client.get(f"/admin/nucleo/cita/{cita.id}/change/").status_code, 200)
+        self.assertEqual(self.client.post(f"/admin/nucleo/cita/{cita.id}/change/", {"estado": "cancelada"}).status_code, 403)
 
     def test_personal_de_clinica_no_entra_al_admin(self):
         self.entrar("demo", "kenia.navarro")

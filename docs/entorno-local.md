@@ -10,7 +10,7 @@ Con **un solo comando** levantas en tu laptop:
 | **pgAdmin** | http://localhost:5050 | Ver y consultar la base de datos |
 | **Base de datos** PostgreSQL 16 | `localhost:5433` | Para conectar tu propio pgAdmin |
 
-> **Importante:** el prototipo web **todavía no usa la API**. Sigue guardando en el navegador. Conectar cada pantalla a la API es el siguiente paso. Hoy la API ya se puede probar desde el navegador (ver sección 5) y con las pruebas automáticas.
+> **Importante:** el prototipo web **no usa la API**: guarda en el navegador y se queda como demo. Las pantallas que sí usan la API son las del frontend nuevo en React (`docs/frontend.md`), que se construye por fases. Hoy la API ya se puede probar desde el navegador (ver sección 5) y con las pruebas automáticas.
 
 Todo corre dentro de **Docker**. Docker crea "computadoras miniatura" (contenedores) con todo instalado: no instalas PostgreSQL ni Python en tu sistema. Es la misma tecnología con la que después se sube a la nube.
 
@@ -49,12 +49,6 @@ Si los tres responden con un número de versión, está listo.
 ```
 git clone https://github.com/Navaleitor/KennaDent.git
 cd KennaDent
-```
-
-Mientras la rama de este trabajo no esté en `main`, cámbiate a ella:
-
-```
-git checkout ccr-588b4f9e-wt1g3f
 ```
 
 ## 3. Poner tus contraseñas (una sola vez)
@@ -180,8 +174,9 @@ Todos son **ficticios** y siguen la demo del prototipo:
 Las pruebas automáticas crean una base temporal, cargan la demo y comprueban:
 - el inicio de sesión;
 - el aislamiento entre clínicas;
-- los permisos (precios, agenda propia);
-- las reglas de la agenda (sillón ocupado, doctor de otra sucursal, aviso de empalme);
+- los permisos (precios, agenda propia, gerente solo en su sucursal);
+- la sesión de 30 minutos, que no se entra con correo y que la contraseña inicial bloquea todo hasta cambiarla;
+- las reglas de la agenda (sillón ocupado, doctor de otra sucursal, aviso de empalme con el detalle de la cita, solo a las :00 y :30, nada en el pasado, cancelar y eliminar con motivo);
 - el alta y la baja de pacientes y la bitácora.
 
 Al final deben decir `OK`.
@@ -194,7 +189,7 @@ docker compose exec -e KD_DB_ROL=admin -e KD_DB_NOMBRE=pruebas api python manage
 docker compose exec db psql -U kennadent -d pruebas -f /kd/pruebas/pruebas_django.sql
 ```
 
-Deben aparecer **27 líneas `ERROR`**: son los casos "DEBE FALLAR", es decir, la base rechaza bien los datos inválidos. Para repetirlas, primero borra esa base: `docker compose exec db dropdb -U kennadent pruebas`.
+Deben aparecer **29 líneas `ERROR`**: son los casos "DEBE FALLAR", es decir, la base rechaza bien los datos inválidos. Para repetirlas, primero borra esa base: `docker compose exec db dropdb -U kennadent pruebas`.
 
 ---
 

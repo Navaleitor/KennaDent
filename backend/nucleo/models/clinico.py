@@ -8,8 +8,10 @@ from .base import AHORA, DINERO, DeEmpresa, check, en, fk, unico
 from .catalogos import TipoCita, Tratamiento
 from .estructura import CatalogoHallazgo, Sucursal, Trabajador, Unidad
 
-ESTADOS_CITA = ["programada", "confirmada", "en_sala", "atendida", "no_asistio", "cancelada"]
-ESTADOS_LIBERAN_SILLON = ["cancelada", "no_asistio"]
+ESTADOS_CITA = ["programada", "confirmada", "en_sala", "atendida", "no_asistio", "cancelada", "eliminada"]
+# Cancelada y eliminada salen de la agenda, piden motivo y quedan en el historial del paciente
+ESTADOS_BAJA_CITA = ["cancelada", "eliminada"]
+ESTADOS_LIBERAN_SILLON = ["cancelada", "eliminada", "no_asistio"]
 ESTADOS_PRESUPUESTO = ["borrador", "enviado", "aceptado", "rechazado"]
 ESTADOS_PLAN = ["pendiente", "aceptado", "realizado", "rechazado"]
 CARAS = ["V", "L", "M", "D", "O"]   # vestibular, lingual/palatina, mesial, distal, oclusal/incisal
@@ -84,6 +86,10 @@ class Cita(DeEmpresa):
     nota = models.TextField(null=True, blank=True)
     creado_por = fk(Trabajador, "creado_por", null=True)
     creado_en = models.DateTimeField(db_default=AHORA)
+    # Cancelacion o eliminacion: motivo, quien y cuando (requisitos 2.3, #18 y #19)
+    baja_motivo = models.TextField(null=True, blank=True)
+    baja_por = fk(Trabajador, "baja_por", null=True)
+    baja_en = models.DateTimeField(null=True, blank=True)
 
     class Meta(DeEmpresa.Meta):
         db_table = "cita"
@@ -91,6 +97,8 @@ class Cita(DeEmpresa):
             unico("cita_empresa_id_paciente_doctor_sucursal_key", "empresa", "id", "paciente", "trabajador", "sucursal"),
             check("cita_estado_check", en("estado", ESTADOS_CITA)),
             check("cita_check", Q(fin__gt=F("inicio"))),
+            check("cita_baja_con_motivo", ~en("estado", ESTADOS_BAJA_CITA)
+                  | (Q(baja_motivo__isnull=False) & ~Q(baja_motivo="") & Q(baja_en__isnull=False))),
             # Un sillon no puede tener dos citas a la vez. El empalme del DOCTOR
             # no se prohibe: el frontend solo avisa (v_cita_doctor_empalmada).
             ExclusionConstraint(

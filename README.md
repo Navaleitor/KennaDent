@@ -4,7 +4,7 @@ Sistema de gestión para clínicas dentales con varias sucursales: agenda por un
 
 > **Estado: prototipo navegable de la Fase 1.** Usa datos de ejemplo guardados en el navegador. Sirve para validar pantallas y flujos antes de construir la versión con base de datos real.
 
-Requisitos completos, fases y pendientes por definir: [`docs/requisitos.md`](docs/requisitos.md)
+Requisitos completos, fases y pendientes por definir: [`docs/requisitos.md`](docs/requisitos.md). Cómo se construye el sistema real (frontend React + TypeScript conectado a la API): [`docs/frontend.md`](docs/frontend.md).
 
 ## Secciones
 
@@ -64,7 +64,7 @@ Los nombres, teléfonos, precios y cifras son de ejemplo.
 
 ## Versiones
 
-Versión actual: **0.5.1**. Cada entrega llega como pull request, se anota en [`CHANGELOG.md`](CHANGELOG.md) y, al unirse a `main`, se marca con una etiqueta (`v0.2.0`, `v0.3.0`…).
+Versión actual: **0.6.0**. Cada entrega llega como pull request, se anota en [`CHANGELOG.md`](CHANGELOG.md) y, al unirse a `main`, se marca con una etiqueta (`v0.2.0`, `v0.3.0`…).
 
 ## Reportar bugs o proponer mejoras
 

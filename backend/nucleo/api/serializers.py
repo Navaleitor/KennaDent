@@ -1,11 +1,14 @@
 from django.db import connection
+from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 
 from nucleo.models import (Cita, Paciente, PacienteClinico, Sucursal, TipoCita, Trabajador, TrabajadorSucursal,
                            Tratamiento, Unidad)
-from nucleo.models.clinico import ESTADOS_CITA
+from nucleo.models.clinico import ESTADOS_BAJA_CITA, ESTADOS_CITA, ESTADOS_LIBERAN_SILLON
 
-from .permisos import puede, trabajador_de
+from .errores import Conflicto
+from .permisos import puede, sucursales_de, trabajador_de
 
 
 def mayus(texto):
@@ -36,7 +39,7 @@ class TrabajadorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Trabajador
-        fields = ["id", "nombre", "nombre_completo", "puesto", "especialidad", "color_agenda", "activo", "sucursales"]
+        fields = ["id", "nombre", "nombre_completo", "puesto", "atiende", "especialidad", "color_agenda", "activo", "sucursales"]
 
     def get_sucursales(self, obj):
         return list(TrabajadorSucursal.objects.filter(trabajador=obj, activo=True)
@@ -122,16 +125,23 @@ class PacienteSerializer(serializers.ModelSerializer):
         return paciente
 
 
+def hora_local(momento):
+    return timezone.localtime(momento).strftime("%H:%M")
+
+
 class CitaSerializer(serializers.ModelSerializer):
     paciente_nombre = serializers.SerializerMethodField()
     doctor_nombre = serializers.SerializerMethodField()
     confirmar_empalme = serializers.BooleanField(write_only=True, required=False, default=False)
-    estado = serializers.ChoiceField(choices=ESTADOS_CITA, required=False)
+    # Cancelar y eliminar tienen su propia accion (piden motivo): aqui no se ofrecen
+    estado = serializers.ChoiceField(choices=[e for e in ESTADOS_CITA if e not in ESTADOS_BAJA_CITA], required=False)
 
     class Meta:
         model = Cita
         fields = ["id", "sucursal", "unidad", "paciente", "paciente_nombre", "trabajador", "doctor_nombre",
-                  "tipo_cita", "tratamiento", "piezas", "inicio", "fin", "estado", "nota", "confirmar_empalme"]
+                  "tipo_cita", "tratamiento", "piezas", "inicio", "fin", "estado", "nota", "confirmar_empalme",
+                  "baja_motivo", "baja_por", "baja_en"]
+        read_only_fields = ["baja_motivo", "baja_por", "baja_en"]
 
     def get_fields(self):
         campos = super().get_fields()
@@ -149,20 +159,57 @@ class CitaSerializer(serializers.ModelSerializer):
 
     def validate(self, datos):
         datos = super().validate(datos)
-        inicio = datos.get("inicio", getattr(self.instance, "inicio", None))
-        fin = datos.get("fin", getattr(self.instance, "fin", None))
-        trabajador = datos.get("trabajador", getattr(self.instance, "trabajador", None))
+        request = self.context["request"]
+        cita = self.instance
+        if cita and cita.estado in ESTADOS_BAJA_CITA:
+            raise serializers.ValidationError({"detail": f"La cita esta {cita.estado}: ya no se modifica."})
+        inicio = datos.get("inicio", getattr(cita, "inicio", None))
+        fin = datos.get("fin", getattr(cita, "fin", None))
+        trabajador = datos.get("trabajador", getattr(cita, "trabajador", None))
+        sucursal = datos.get("sucursal", getattr(cita, "sucursal", None))
         confirmar = datos.pop("confirmar_empalme", False)
-        if inicio and fin and trabajador and not confirmar:
-            # El doctor en dos lugares a la vez: se avisa, no se prohibe (agenda.js)
+
+        # La cita es con alguien que atiende pacientes (por persona, no por puesto)
+        if trabajador and (cita is None or trabajador != cita.trabajador) and not trabajador.atiende:
+            raise serializers.ValidationError({"trabajador": f"{trabajador.nombre_completo} no atiende pacientes."})
+
+        # Sin "todas_sucursales" solo se agenda en las sucursales asignadas
+        if (sucursal and not puede(request, "todas_sucursales")
+                and not sucursales_de(request).filter(sucursal_id=sucursal.id).exists()):
+            raise PermissionDenied("No tienes acceso a esa sucursal.")
+
+        # Horario: solo a las :00 y :30 y nunca en el pasado, al crear o al mover (requisitos 2.3)
+        nueva_hora = cita is None or ("inicio" in datos and datos["inicio"] != cita.inicio)
+        if inicio and nueva_hora:
+            local = timezone.localtime(inicio)
+            if local.minute not in (0, 30) or local.second or local.microsecond:
+                raise serializers.ValidationError({"inicio": "Las citas empiezan solo a las :00 o a las :30."})
+        # Cambiar solo el sillón de una cita pasada sí se permite (corregir dónde se atendió)
+        if inicio and nueva_hora and inicio <= timezone.now():
+            raise serializers.ValidationError({"inicio": "No se puede agendar ni mover una cita a un dia u hora que ya paso."})
+
+        cambia_agenda = cita is None or any(k in datos and datos[k] != getattr(cita, k) for k in ("inicio", "fin", "trabajador"))
+        if inicio and fin and trabajador and cambia_agenda and not confirmar:
+            # El doctor en dos lugares a la vez: se avisa diciendo cual cita es y quien agenda decide
+            # (solo al crear o al cambiar hora, duracion o doctor; no al cambiar la nota o el estado)
             choque = (Cita.objects.filter(trabajador=trabajador, inicio__lt=fin, fin__gt=inicio)
-                      .exclude(estado__in=["cancelada", "no_asistio"]))
-            if self.instance:
-                choque = choque.exclude(pk=self.instance.pk)
-            if choque.exists():
-                from .errores import Conflicto
-                raise Conflicto("El doctor ya tiene otra cita en ese horario. "
-                                "Envia confirmar_empalme=true para agendar de todos modos.")
+                      .exclude(estado__in=ESTADOS_LIBERAN_SILLON)
+                      .select_related("paciente", "tratamiento", "tipo_cita", "unidad", "sucursal").order_by("inicio"))
+            if cita:
+                choque = choque.exclude(pk=cita.pk)
+            otra = choque.first()
+            if otra:
+                horario = f"{trabajador.nombre_completo} ya tiene una cita de {hora_local(otra.inicio)} a {hora_local(otra.fin)}"
+                ve_sucursal = (puede(request, "todas_sucursales")
+                               or sucursales_de(request).filter(sucursal_id=otra.sucursal_id).exists())
+                if ve_sucursal:
+                    que = otra.tratamiento or otra.tipo_cita
+                    detalle = (f"({que.nombre + ', ' if que else ''}{otra.paciente.nombre} {otra.paciente.apellidos}) "
+                               f"en {otra.unidad.nombre}")
+                else:
+                    # Cita de una sucursal que esta persona no ve: solo horario y sucursal (decidido en v0.6.0)
+                    detalle = f"en la sucursal {otra.sucursal.nombre}"
+                raise Conflicto(f"{horario} {detalle}. Envia confirmar_empalme=true para agendar de todos modos.")
         return datos
 
     def create(self, datos):

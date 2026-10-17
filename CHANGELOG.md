@@ -6,6 +6,40 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 - El segundo número (**x**) sube con cada entrega grande; el tercero (**y**) con correcciones.
 - La **1.0.0** será la primera versión lista para usarse con clínicas reales.
 
+## [0.6.0] - 2026-10-16
+La API cumple las reglas de acceso y de agenda decididas en octubre (sección 6 de `docs/requisitos.md`). Son los 6 hallazgos que encontró el agente `reglas-negocio` al revisar la v0.5.0.
+
+### Cambiado
+- **Inicio de sesión sin correo:** solo clínica + usuario + contraseña.
+- **La sesión se cierra tras 30 minutos sin uso** (antes duraba 10 horas). Cada acción vuelve a contar los 30 minutos.
+- **La contraseña inicial bloquea todo** hasta cambiarla: solo se puede cambiar la contraseña o salir.
+- **Gerente y quien no tiene "acceso a todas las sucursales":** en la agenda solo ven y agendan en sus sucursales (siempre ven sus propias citas).
+- **Agenda en la API:** solo a las :00 y :30 y nunca en el pasado, al crear y al mover. Una cita pasada sí se puede actualizar (estado, nota).
+- **Doctor con otra cita a esa hora:** se avisa diciendo cuál es (horario, tratamiento, paciente y unidad) y quien agenda decide. Si esa otra cita es de una sucursal que la persona no puede ver, el aviso dice solo el horario y la sucursal. En el prototipo, "Nueva cita" ya ofrece esas horas marcadas como "doctor con otra cita" y avisa antes de guardar; al arrastrar una cita pide confirmación. Antes el prototipo no lo permitía.
+
+### Agregado
+- **El administrador general (o cualquier persona) puede atender pacientes si es dentista.** Quién atiende se decide por persona, con la casilla "Atiende pacientes" en Personal (sale marcada según el puesto). En la demo, Kenia (administradora) ya aparece como doctora. En la API, `trabajador.atiende` (migración `0006`) y solo se agendan citas con quien atiende. La demo del prototipo se reinicia (llave `kennadent-demo-v6`).
+- **Cancelar y eliminar citas en la API** (`/citas/{id}/cancelar/` y `/eliminar/`), siempre con motivo, quién y cuándo. Salen de la agenda y quedan en el historial del paciente (`?paciente=&bajas=1`, sin límite de fechas).
+- La base ya **no deja borrar citas** y exige el motivo en las canceladas o eliminadas. Las canceladas que ya existían quedaron con "Sin motivo registrado".
+- En el admin de plataforma las citas son **solo de consulta**, para que nadie se salte las reglas de la agenda.
+- El aviso del doctor ocupado sale al crear o al cambiar hora, duración o doctor; no al cambiar solo la nota o el estado (también en el prototipo).
+- A una cita pasada se le puede cambiar el sillón (no la hora). Una cancelada o eliminada ya no se modifica ni se reactiva. Un doctor siempre ve sus propias citas. Anotado en `docs/requisitos.md`.
+- 8 pruebas automáticas nuevas de la API (21 en total) y 2 casos nuevos en las pruebas SQL (29 rechazos esperados).
+
+### Decidido
+- **Frontend real en React + TypeScript**, conectado a la API, como base para muchas clínicas y uso en línea. La estructura (tecnología, carpetas, reglas, escala y fases F0 a F3) está en [`docs/frontend.md`](docs/frontend.md). El prototipo se queda como demo y referencia de diseño.
+
+### Agentes y documentos
+- `reglas-negocio` marca como 🟡 "pendiente conocido" una regla que todavía falta, si ya está anotada para una entrega futura y el cambio no la empeora. Las decisiones anotadas son definitivas: Kenia y su hermano deciden con el mismo peso (también en `CLAUDE.md`).
+- **Equipo de agentes ampliado**, coordinado por `/revision` (agente `revision`), que lanza solo los que aplican según lo que cambió y junta un solo reporte:
+  - `seguridad-datos`: aislamiento entre clínicas, permisos por vista, secretos y migraciones nuevas; consulta la base de QA solo en lectura;
+  - `docs-al-dia`: contradicciones entre documentos y código, citando las dos partes;
+  - `revisor-pr`: checklist de forma del PR (versión, CHANGELOG, "Fixes #N", sin firmas).
+- **Hook de solo lectura** (`.claude/hooks/solo_lectura.py`): ningún agente de revisión puede escribir. Bloquea todo comando que no sea de consulta y aprueba solo los de consulta. Antes, la lista de herramientas de los agentes no limitaba Bash de verdad.
+- `reglas-negocio`: 🔴 solo para código nuevo que contradice una regla o rompe algo que ya funcionaba.
+- `qa-backend` no guarda la salida en archivos, ni siquiera temporales. Se corrigió la referencia a su paso 3 (verificación desde cero), que ya se probó: migraciones 0001 a 0005 y demo sin errores. La 0006 (quién atiende) llegó después: se aplicó sobre la base de QA con datos y en la base temporal de las pruebas, sin errores.
+- Regla aclarada en `CLAUDE.md` y `docs/requisitos.md`: doctor ocupado = se avisa y quien agenda decide. También se quitó la contradicción sobre la entrada con correo.
+
 ## [0.5.1] - 2026-10-16
 Primeros agentes de revisión. No cambia nada de las pantallas ni del backend.
 
