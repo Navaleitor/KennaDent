@@ -210,6 +210,36 @@ class ApiTest(APITestCase):
             Cita.objects.filter(pk=otra["id"]).delete()
         self.assertTrue(Cita.objects.filter(pk=otra["id"]).exists())
 
+    def test_administradora_dentista_atiende_y_quien_no_atiende_no_tiene_citas(self):
+        kenia = Trabajador.objects.get(nombre="KENIA NAVARRO")       # administradora general y dentista
+        self.entrar("demo", "daniela.flores")
+        doctores = {d["id"] for d in self.client.get("/api/v1/personal/?atiende=1").json()}
+        self.assertIn(kenia.id, doctores)
+        self.assertEqual(self.cita(trabajador=kenia).status_code, 201)
+        # Recepción no atiende: no se le puede agendar una cita
+        daniela = Trabajador.objects.get(usuario__login="demo/daniela.flores")
+        self.assertNotIn(daniela.id, doctores)
+        r = self.cita(trabajador=daniela, unidad=self.unidad2)
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("no atiende pacientes", r.json()["trabajador"][0])
+
+    def test_aviso_de_otra_sucursal_solo_dice_horario_y_sucursal(self):
+        # MARIANA atiende en CUMBRES y SAN PEDRO; ya tiene cita en SAN PEDRO a esa hora
+        mariana = Trabajador.objects.get(nombre="MARIANA CANTU RIOS")
+        san_pedro = Sucursal.objects.get(nombre="SAN PEDRO")
+        Cita.objects.create(empresa_id=self.cumbres.empresa_id, sucursal=san_pedro, trabajador=mariana,
+                            unidad=Unidad.objects.filter(sucursal=san_pedro).first(), paciente=self.paciente_demo,
+                            inicio=self.libre, fin=self.libre + timedelta(minutes=30))
+        self.entrar("demo", "carlos.martinez")           # gerente de CUMBRES: no ve SAN PEDRO
+        r = self.cita(trabajador=mariana)
+        self.assertEqual(r.status_code, 409)
+        aviso = r.json()["detail"]
+        self.assertIn("ya tiene una cita de 07:00 a 07:30 en la sucursal SAN PEDRO", aviso)
+        self.assertNotIn(self.paciente_demo.nombre, aviso)
+        self.client.delete("/api/v1/sesion/")
+        self.entrar("demo", "kenia.navarro")             # administradora: ve todas, aviso completo
+        self.assertIn(self.paciente_demo.nombre, self.cita(trabajador=mariana).json()["detail"])
+
     def test_gerente_ve_y_agenda_solo_en_su_sucursal(self):
         hoy = timezone.localdate()
         rango = f"desde={hoy - timedelta(days=7)}T00:00:00-06:00&hasta={hoy}T23:59:00-06:00"

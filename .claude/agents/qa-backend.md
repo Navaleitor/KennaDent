@@ -40,8 +40,8 @@ Debe mostrar `db` y `api` como **healthy**. Si dice `Cannot connect to the Docke
 docker compose exec -T -e KD_DB_ROL=admin api python manage.py test nucleo -v 2 --noinput
 ```
 
-- Esperado: **19 pruebas** y al final `OK`. (`--noinput` borra sola la base temporal de una corrida anterior que se haya quedado.)
-- Cuenta cuántas pasaron y cuántas fallaron (`FAIL`) o dieron error (`ERROR`). Si el total ya no es 19, dilo: alguien agregó o quitó pruebas.
+- Esperado: **21 pruebas** y al final `OK`. (`--noinput` borra sola la base temporal de una corrida anterior que se haya quedado.)
+- Cuenta cuántas pasaron y cuántas fallaron (`FAIL`) o dieron error (`ERROR`). Si el total ya no es 21, dilo: alguien agregó o quitó pruebas.
 - Por cada falla: nombre de la prueba, el mensaje (la línea `AssertionError` o la excepción) y el archivo probable. Las pruebas están en `backend/nucleo/tests/test_api.py`; el código que prueban suele estar en `backend/nucleo/api/vistas.py`, `serializers.py`, `permisos.py`, `errores.py`, en `backend/nucleo/models/` o en las migraciones `RunSQL` (`backend/nucleo/migrations/0002_base_de_datos.py`). Lee la prueba que falló para señalar el archivo con fundamento.
 
 ## Paso 2. Pruebas SQL del modelo (siempre)
@@ -112,7 +112,7 @@ docker compose logs api --tail 80
 
 | Prueba | Resultado |
 |---|---|
-| API (Django) | 19 de 19 pasaron |
+| API (Django) | 21 de 21 pasaron |
 | SQL del modelo (pruebas_django.sql) | 29 de 29 rechazos esperados, 0 sorpresas |
 | Migraciones desde cero | No se pidió |
 

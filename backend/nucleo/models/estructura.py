@@ -141,6 +141,9 @@ class Trabajador(DeEmpresa):
     nombre = models.TextField()              # en MAYUSCULAS
     sexo = models.CharField(max_length=1, null=True, blank=True)
     lleva_titulo = models.BooleanField(db_default=False)
+    # Atiende pacientes (puede tener citas a su nombre). Se decide por persona: al darla de alta
+    # se copia de su puesto, y se puede activar, por ejemplo, a un administrador que es dentista.
+    atiende = models.BooleanField(db_default=False)
     especialidad = models.TextField(null=True, blank=True)
     cedula = models.TextField(null=True, blank=True)
     telefono = models.TextField(null=True, blank=True)

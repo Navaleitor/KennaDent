@@ -2,8 +2,8 @@
 // En producción esto se reemplaza por una base de datos (ver docs/requisitos.md).
 window.KD = window.KD || {};
 
-const STORAGE_KEY = "kennadent-demo-v5";
-const LLAVES_VIEJAS = ["kennadent-demo-v1", "kennadent-demo-v2", "kennadent-demo-v3", "kennadent-demo-v4"];
+const STORAGE_KEY = "kennadent-demo-v6";
+const LLAVES_VIEJAS = ["kennadent-demo-v1", "kennadent-demo-v2", "kennadent-demo-v3", "kennadent-demo-v4", "kennadent-demo-v5"];
 
 // ---------- Utilidades de fecha y texto ----------
 const pad = (n) => String(n).padStart(2, "0");
@@ -148,14 +148,14 @@ function generarDemo() {
     usados.push(usuario);
     return {
       id, nombre, sexo, puesto, sucursales: sucs, color, activo: true, alta: KD.sumarDias(hoy, -entre(300, 1200)),
-      titulo: !!pu.titulo, usuario, password: KD.generarPassword(nombre, r),
+      titulo: !!pu.titulo, atiende: !!pu.atiende, usuario, password: KD.generarPassword(nombre, r),
       telefono: `81 ${entre(1000, 9999)} ${entre(1000, 9999)}`, email: "",
       permisos: [...pu.permisos], especialidad: "", cedula: pu.cedula ? String(entre(1000000, 9999999)) : "",
       ...extra,
     };
   };
   const personal = [
-    P("u1", "KENIA NAVARRO", "F", "admin", ["s1", "s2", "s3"], "ocre", { titulo: true, cedula: String(entre(1000000, 9999999)) }),
+    P("u1", "KENIA NAVARRO", "F", "admin", ["s1", "s2", "s3"], "ocre", { titulo: true, atiende: true, cedula: String(entre(1000000, 9999999)) }),
     P("u2", "ANDREA GARZA LEAL", "F", "odontologo", ["s1"], "petroleo"),
     P("u3", "LUIS TREVIÑO CHAPA", "M", "odontologo", ["s1"], "salvia"),
     P("u4", "MARIANA CANTÚ RÍOS", "F", "especialista", ["s1", "s2"], "lavanda", { especialidad: "Ortodoncia" }),
@@ -194,7 +194,7 @@ function generarDemo() {
     });
   }
 
-  const doctores = personal.filter((u) => KD.puesto(u.puesto).atiende);
+  const doctores = personal.filter((u) => KD.atiende(u));
   const citas = [], consultas = [], planes = [], presupuestos = [], citasEliminadas = [];
   const trat = (id) => tratamientos.find((t) => t.id === id);
   const precio = (id) => Math.round(trat(id).precio * (0.95 + r() * 0.1) / 50) * 50;
@@ -480,7 +480,10 @@ KD.colorUsuario = (id) => KD.color((KD.byId("personal", id) || {}).color);
 KD.usuario = () => KD.byId("personal", KD.db.sesion.usuarioId);
 KD.puede = (permiso) => (KD.usuario()?.permisos || []).includes(permiso);
 KD.verDinero = () => KD.puede("dinero");
-KD.esDoctor = (u = KD.usuario()) => !!KD.puesto(u?.puesto).atiende;
+// Atiende pacientes (aparece como doctor): se decide por persona; si no se indicó, según su puesto.
+// Así un administrador que también es dentista puede tener citas a su nombre.
+KD.atiende = (u) => !!(u && (u.atiende ?? KD.puesto(u.puesto).atiende));
+KD.esDoctor = (u = KD.usuario()) => KD.atiende(u);
 
 // Sucursales visibles para el usuario actual
 KD.sucursalesUsuario = () => {
@@ -505,7 +508,7 @@ KD.unidades = (sucId) => {
   const n = Math.max(1, Number((KD.byId("sucursales", sucId) || {}).unidades) || 1);
   return Array.from({ length: n }, (_, i) => i + 1);
 };
-KD.doctores = (sucIds) => KD.db.personal.filter((u) => u.activo && KD.puesto(u.puesto).atiende && (!sucIds || u.sucursales.some((s) => sucIds.includes(s))));
+KD.doctores = (sucIds) => KD.db.personal.filter((u) => u.activo && KD.atiende(u) && (!sucIds || u.sucursales.some((s) => sucIds.includes(s))));
 
 KD.consultaDeCita = (citaId) => indices().consultaPorCita.get(citaId);
 KD.citasPaciente = (pid) => indices().citasPorPac.get(pid) || [];

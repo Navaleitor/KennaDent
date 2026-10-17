@@ -48,6 +48,7 @@ Puestos incluidos:
 
 - Datos: nombre (en mayúsculas), sexo, puesto, especialidad, cédula profesional, teléfono, correo opcional, sucursales y **color en la agenda** (paleta del prototipo de Kenia).
 - **Prefijo Dr. / Dra.** según el sexo, automático para odontólogo, especialista e higienista (se puede activar o quitar por persona).
+- **Atiende pacientes** (aparece como doctor en la agenda y puede tener citas a su nombre): automático para odontólogo, especialista e higienista, y **se puede activar por persona**. Por ejemplo, el administrador general que también es dentista sí atiende (decidido en octubre 2026, v0.6.0).
 - **Usuario y contraseña predeterminados** (Issue #6):
   - Usuario: `nombre.apellido` (ej. RICARDO NAVA CORTÉS → `ricardo.nava`). Si ya existe, se usa el segundo apellido (`ricardo.cortes`) y el sistema lo avisa.
   - Contraseña: en el prototipo, `nombreapellido` + 3 números al azar (ej. `ricardonava123`). **Con el backend será al azar** (no adivinable) y se muestra solo al crearla o regenerarla (ver sección 6).
@@ -154,7 +155,7 @@ Decidido (septiembre 2026): la agenda es por unidad; el doctor ve solo su agenda
 
 Decidido (octubre 2026): citas solo a las :00 y :30; no se agenda en el pasado; al eliminar **o** cancelar una cita se pide motivo, la cita desaparece de la agenda y queda en el historial del paciente; puede hacerlo quien edita la agenda (v0.4.0, #18 y #19).
 
-Decidido (octubre 2026, v0.6.0): si el doctor ya tiene otra cita a esa hora, **se avisa diciendo cuál es y quien agenda decide** (al crear y al mover); el sillón ocupado sí se bloquea. Una cita **eliminada** no se borra de la base: queda con estado "eliminada", motivo, quién y cuándo, igual que la cancelada. Pagos y movimientos de dinero no se editan ni se borran: se corrigen con un movimiento nuevo (ya lo aplica la base).
+Decidido (octubre 2026, v0.6.0): si el doctor ya tiene otra cita a esa hora, **se avisa diciendo cuál es y quien agenda decide** (al crear y al mover); el sillón ocupado sí se bloquea. Si esa otra cita es de una **sucursal que la persona no puede ver**, el aviso dice **solo el horario y la sucursal**, sin paciente ni tratamiento. Una cita **eliminada** no se borra de la base: queda con estado "eliminada", motivo, quién y cuándo, igual que la cancelada. Pagos y movimientos de dinero no se editan ni se borran: se corrigen con un movimiento nuevo (ya lo aplica la base).
 
 Decidido (octubre 2026): antes de cada pull request se corren dos **agentes de revisión** que solo reportan con semáforo y nunca corrigen ni unen (v0.5.1): `reglas-negocio` revisa que los cambios respeten las reglas de este documento y de `CLAUDE.md` (un 🔴 bloquea el PR) y `qa-backend` corre las pruebas automáticas del backend y del modelo de datos. Están en `.claude/agents/`.
 

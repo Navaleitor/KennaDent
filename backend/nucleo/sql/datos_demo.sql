@@ -58,6 +58,10 @@ FROM (VALUES
   (2, 'recepcion',    'LAURA PEREZ NUNEZ',      'F', false, NULL,          NULL,      '55 1000 0002', '#5d6873', 100)
 ) v(e, puesto, nombre, sexo, titulo, esp, ced, tel, color, alta);
 
+-- Quién atiende pacientes: según su puesto; KENIA (administradora) también es dentista y atiende
+UPDATE trabajador t SET atiende = p.atiende FROM puesto p WHERE p.id = t.puesto_id;
+UPDATE trabajador SET atiende = true WHERE nombre = 'KENIA NAVARRO';
+
 -- Permisos efectivos = los sugeridos de su puesto
 INSERT INTO trabajador_permiso (empresa_id, trabajador_id, permiso_id)
 SELECT t.empresa_id, t.id, pp.permiso_id

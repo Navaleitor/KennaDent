@@ -258,8 +258,11 @@ function choqueUnidad(c) {
 function avisoDoctor(c) {
   const doc = encimadas(c).find((x) => x.doctorId === c.doctorId);
   if (!doc) return "";
+  const horario = `${KD.nombreUsuario(c.doctorId)} ya tiene una cita de ${doc.hora} a ${KD.aHora(KD.finCita(doc))}`;
+  // Cita de una sucursal que esta persona no ve: solo horario y sucursal, sin paciente ni tratamiento
+  if (!KD.sucursalesUsuario().some((s) => s.id === doc.sucursalId)) return `${horario} en la sucursal ${KD.byId("sucursales", doc.sucursalId)?.nombre}.`;
   const que = doc.tratamientoId ? KD.nombreTrat(doc.tratamientoId) : KD.byId("tiposCita", doc.tipoId)?.nombre;
-  return `${KD.nombreUsuario(c.doctorId)} ya tiene una cita de ${doc.hora} a ${KD.aHora(KD.finCita(doc))} (${que ? `${que}, ` : ""}${KD.byId("pacientes", doc.pacienteId)?.nombre}) en UNIDAD ${doc.unidad || 1}.`;
+  return `${horario} (${que ? `${que}, ` : ""}${KD.byId("pacientes", doc.pacienteId)?.nombre}) en UNIDAD ${doc.unidad || 1}.`;
 }
 
 function cambiarEstado(c, estado) {

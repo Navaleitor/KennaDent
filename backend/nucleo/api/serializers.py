@@ -39,7 +39,7 @@ class TrabajadorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Trabajador
-        fields = ["id", "nombre", "nombre_completo", "puesto", "especialidad", "color_agenda", "activo", "sucursales"]
+        fields = ["id", "nombre", "nombre_completo", "puesto", "atiende", "especialidad", "color_agenda", "activo", "sucursales"]
 
     def get_sucursales(self, obj):
         return list(TrabajadorSucursal.objects.filter(trabajador=obj, activo=True)
@@ -169,6 +169,10 @@ class CitaSerializer(serializers.ModelSerializer):
         sucursal = datos.get("sucursal", getattr(cita, "sucursal", None))
         confirmar = datos.pop("confirmar_empalme", False)
 
+        # La cita es con alguien que atiende pacientes (por persona, no por puesto)
+        if trabajador and (cita is None or trabajador != cita.trabajador) and not trabajador.atiende:
+            raise serializers.ValidationError({"trabajador": f"{trabajador.nombre_completo} no atiende pacientes."})
+
         # Sin "todas_sucursales" solo se agenda en las sucursales asignadas
         if (sucursal and not puede(request, "todas_sucursales")
                 and not sucursales_de(request).filter(sucursal_id=sucursal.id).exists()):
@@ -190,16 +194,22 @@ class CitaSerializer(serializers.ModelSerializer):
             # (solo al crear o al cambiar hora, duracion o doctor; no al cambiar la nota o el estado)
             choque = (Cita.objects.filter(trabajador=trabajador, inicio__lt=fin, fin__gt=inicio)
                       .exclude(estado__in=ESTADOS_LIBERAN_SILLON)
-                      .select_related("paciente", "tratamiento", "tipo_cita", "unidad").order_by("inicio"))
+                      .select_related("paciente", "tratamiento", "tipo_cita", "unidad", "sucursal").order_by("inicio"))
             if cita:
                 choque = choque.exclude(pk=cita.pk)
             otra = choque.first()
             if otra:
-                que = otra.tratamiento or otra.tipo_cita
-                raise Conflicto(
-                    f"{trabajador.nombre_completo} ya tiene una cita de {hora_local(otra.inicio)} a {hora_local(otra.fin)} "
-                    f"({que.nombre + ', ' if que else ''}{otra.paciente.nombre} {otra.paciente.apellidos}) "
-                    f"en {otra.unidad.nombre}. Envia confirmar_empalme=true para agendar de todos modos.")
+                horario = f"{trabajador.nombre_completo} ya tiene una cita de {hora_local(otra.inicio)} a {hora_local(otra.fin)}"
+                ve_sucursal = (puede(request, "todas_sucursales")
+                               or sucursales_de(request).filter(sucursal_id=otra.sucursal_id).exists())
+                if ve_sucursal:
+                    que = otra.tratamiento or otra.tipo_cita
+                    detalle = (f"({que.nombre + ', ' if que else ''}{otra.paciente.nombre} {otra.paciente.apellidos}) "
+                               f"en {otra.unidad.nombre}")
+                else:
+                    # Cita de una sucursal que esta persona no ve: solo horario y sucursal (decidido en v0.6.0)
+                    detalle = f"en la sucursal {otra.sucursal.nombre}"
+                raise Conflicto(f"{horario} {detalle}. Envia confirmar_empalme=true para agendar de todos modos.")
         return datos
 
     def create(self, datos):

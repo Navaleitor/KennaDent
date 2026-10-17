@@ -142,7 +142,7 @@ class TrabajadorViewSet(BaseEmpresa, viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         qs = Trabajador.objects.filter(activo=True).order_by("nombre")
         if self.request.query_params.get("atiende") == "1":
-            qs = qs.filter(puesto__atiende=True)
+            qs = qs.filter(atiende=True)   # por persona (un administrador dentista también)
         return qs
 
 

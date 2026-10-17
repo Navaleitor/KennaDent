@@ -47,7 +47,7 @@ function formPersonal(per) {
   const yo = KD.usuario();
   const usados = KD.db.personal.filter((p) => p.id !== per?.id).map((p) => p.usuario);
   const colorLibre = KD.COLORES.find((c) => !KD.db.personal.some((p) => p.activo && p.color === c.id))?.id || KD.COLORES[0].id;
-  const d = per || { nombre: "", sexo: "", puesto: "recepcion", especialidad: "", cedula: "", telefono: "", email: "", color: colorLibre, titulo: false,
+  const d = per || { nombre: "", sexo: "", puesto: "recepcion", especialidad: "", cedula: "", telefono: "", email: "", color: colorLibre, titulo: false, atiende: false,
     sucursales: KD.sucursalesFiltro().slice(0, 1), permisos: [...KD.puesto("recepcion").permisos] };
   const grupos = [...new Set(KD.PUESTOS.map((p) => p.grupo))];
   const gruposPermisos = [...new Set(KD.PERMISOS.map((p) => p.grupo))];
@@ -68,6 +68,7 @@ function formPersonal(per) {
       <label class="campo" data-esp><span>Especialidad</span><select name="especialidad"><option value="">—</option>${KD.opciones(KD.ESPECIALIDADES.map((e) => ({ id: e, nombre: e })), d.especialidad)}</select></label>
       <label class="campo" data-ced><span>Cédula profesional</span><input name="cedula" value="${KD.esc(d.cedula)}" inputmode="numeric"></label>
       <label class="checks full" style="display:flex"><input type="checkbox" name="titulo" ${d.titulo ? "checked" : ""}> Usar prefijo Dr. / Dra. (según el sexo)</label>
+      <label class="checks full" style="display:flex"><input type="checkbox" name="atiende" ${KD.atiende(d) ? "checked" : ""}> Atiende pacientes: aparece como doctor en la agenda (por ejemplo, un administrador que también es dentista)</label>
       <label class="campo"><span>Teléfono / WhatsApp <em>*</em></span><input type="tel" name="telefono" required value="${KD.esc(d.telefono)}"></label>
       <label class="campo"><span>Correo (opcional)</span><input type="email" name="email" value="${KD.esc(d.email)}" placeholder="Si la clínica tiene correos propios"></label>
       <div class="campo full"><span>Color en la agenda</span>
@@ -99,7 +100,7 @@ function formPersonal(per) {
   const actualizar = () => {
     const pu = KD.puesto(f.puesto.value);
     m.querySelector("[data-esp]").hidden = f.puesto.value !== "especialista";
-    m.querySelector("[data-ced]").hidden = !pu.cedula;
+    m.querySelector("[data-ced]").hidden = !pu.cedula && !f.atiende.checked;
     const nombre = limpiarNombre(f.nombre.value);
     m.querySelector("[data-preview]").textContent = nombre ? KD.nombrePersona({ nombre, titulo: f.titulo.checked, sexo: f.sexo.value || "F" }) : "—";
     if (!per && nombre) {
@@ -114,6 +115,7 @@ function formPersonal(per) {
   f.puesto.addEventListener("change", () => {
     m.querySelector("[data-permisos]").innerHTML = checksPermisos(KD.puesto(f.puesto.value).permisos);
     f.titulo.checked = !!KD.puesto(f.puesto.value).titulo;
+    f.atiende.checked = !!KD.puesto(f.puesto.value).atiende;
     actualizar();
   });
   f.sexo.addEventListener("change", actualizar);
@@ -139,7 +141,7 @@ function formPersonal(per) {
     } else obj.password = f.password.value;
     Object.assign(obj, {
       nombre, sexo: v.sexo, puesto: v.puesto, especialidad: v.puesto === "especialista" ? v.especialidad : "", titulo: !!v.titulo,
-      cedula: KD.puesto(v.puesto).cedula ? v.cedula : "", telefono: v.telefono, email: v.email, color: v.color || colorLibre,
+      atiende: !!v.atiende, cedula: KD.puesto(v.puesto).cedula || v.atiende ? v.cedula : "", telefono: v.telefono, email: v.email, color: v.color || colorLibre,
       sucursales, permisos: [].concat(v.permisos || []),
     });
     if (!per) KD.db.personal.push(obj);

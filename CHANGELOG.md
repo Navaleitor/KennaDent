@@ -15,14 +15,15 @@ La API cumple las reglas de acceso y de agenda decididas en octubre (sección 6 
 - **La contraseña inicial bloquea todo** hasta cambiarla: solo se puede cambiar la contraseña o salir.
 - **Gerente y quien no tiene "acceso a todas las sucursales":** en la agenda solo ven y agendan en sus sucursales (siempre ven sus propias citas).
 - **Agenda en la API:** solo a las :00 y :30 y nunca en el pasado, al crear y al mover. Una cita pasada sí se puede actualizar (estado, nota).
-- **Doctor con otra cita a esa hora:** se avisa diciendo cuál es (horario, tratamiento, paciente y unidad) y quien agenda decide. En el prototipo, "Nueva cita" ya ofrece esas horas marcadas como "doctor con otra cita" y avisa antes de guardar; al arrastrar una cita pide confirmación. Antes el prototipo no lo permitía.
+- **Doctor con otra cita a esa hora:** se avisa diciendo cuál es (horario, tratamiento, paciente y unidad) y quien agenda decide. Si esa otra cita es de una sucursal que la persona no puede ver, el aviso dice solo el horario y la sucursal. En el prototipo, "Nueva cita" ya ofrece esas horas marcadas como "doctor con otra cita" y avisa antes de guardar; al arrastrar una cita pide confirmación. Antes el prototipo no lo permitía.
 
 ### Agregado
+- **El administrador general (o cualquier persona) puede atender pacientes si es dentista.** Quién atiende se decide por persona, con la casilla "Atiende pacientes" en Personal (sale marcada según el puesto). En la demo, Kenia (administradora) ya aparece como doctora. En la API, `trabajador.atiende` (migración `0006`) y solo se agendan citas con quien atiende. La demo del prototipo se reinicia (llave `kennadent-demo-v6`).
 - **Cancelar y eliminar citas en la API** (`/citas/{id}/cancelar/` y `/eliminar/`), siempre con motivo, quién y cuándo. Salen de la agenda y quedan en el historial del paciente (`?paciente=&bajas=1`, sin límite de fechas).
 - La base ya **no deja borrar citas** y exige el motivo en las canceladas o eliminadas. Las canceladas que ya existían quedaron con "Sin motivo registrado".
 - En el admin de plataforma las citas son **solo de consulta**, para que nadie se salte las reglas de la agenda.
 - El aviso del doctor ocupado sale al crear o al cambiar hora, duración o doctor; no al cambiar solo la nota o el estado.
-- 6 pruebas automáticas nuevas de la API (19 en total) y 2 casos nuevos en las pruebas SQL (29 rechazos esperados).
+- 8 pruebas automáticas nuevas de la API (21 en total) y 2 casos nuevos en las pruebas SQL (29 rechazos esperados).
 
 ### Decidido
 - **Frontend real en React + TypeScript**, conectado a la API, como base para muchas clínicas y uso en línea. La estructura (tecnología, carpetas, reglas, escala y fases F0 a F3) está en [`docs/frontend.md`](docs/frontend.md). El prototipo se queda como demo y referencia de diseño.

@@ -54,6 +54,7 @@ Esta lista es un recordatorio; manda lo que digan los documentos. Para cada regl
 - Nunca dos citas en la misma **unidad** (sillón) a la vez (`choqueUnidad` en el prototipo; en la base, la restricción `cita_sin_empalme_unidad`).
 - Si el **doctor** ya tiene otra cita: se **avisa** diciendo cuál cita es (horario, tratamiento, paciente y unidad), y **quien agenda decide**, al crear y al mover. No debe bloquear ni dejar pasar sin aviso. (`avisoDoctor` en el prototipo; `confirmar_empalme` en la API.)
 - Sin el permiso `agenda_todas`, cada quien ve solo sus citas; el personal clínico ve solo su agenda.
+- Las citas son solo con personas que **atienden pacientes**, y eso se decide **por persona** (`KD.atiende`, `trabajador.atiende`), no por puesto: un administrador dentista sí puede atender.
 - Cancelar o eliminar una cita pide **motivo** y guarda quién y cuándo; la cita sale de la agenda y queda en el historial del paciente. En la base ninguna cita se borra: queda con estado `cancelada` o `eliminada` (`cita_baja_con_motivo`, `cita_no_borrar`).
 
 **Datos clínicos**

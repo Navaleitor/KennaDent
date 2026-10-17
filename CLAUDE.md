@@ -8,7 +8,7 @@
 
 ## Estado actual
 - Prototipo navegable de la **Fase 1**: HTML, CSS y JavaScript sin dependencias ni compilación, publicado con GitHub Pages desde `main`.
-- Los datos son de ejemplo (`js/data.js`) y se guardan en `localStorage` en formato por columnas (`empacar`/`desempacar`) para caber en ~2.5 MB (límite de Safari en iPad). Si cambia la estructura de los datos, subir `STORAGE_KEY` (hoy `kennadent-demo-v5`) y agregar la anterior a `LLAVES_VIEJAS`.
+- Los datos son de ejemplo (`js/data.js`) y se guardan en `localStorage` en formato por columnas (`empacar`/`desempacar`) para caber en ~2.5 MB (límite de Safari en iPad). Si cambia la estructura de los datos, subir `STORAGE_KEY` (hoy `kennadent-demo-v6`) y agregar la anterior a `LLAVES_VIEJAS`.
 - Los campos vacíos (`""`) no se guardan: al leer, tratarlos como opcionales (`KD.esc` ya acepta `undefined`).
 - Los scripts son clásicos (no módulos ES) para que funcione abriendo `index.html` con doble clic. Todo cuelga de `window.KD`.
 - Todo texto que venga de datos se escapa con `KD.esc()` antes de meterlo en `innerHTML`.
@@ -33,6 +33,7 @@
 ## Reglas del negocio (acordadas con el usuario)
 - **Nombres en mayúsculas** (pacientes, personal, tratamientos): usar `KD.mayus()` al guardar. Personal clínico con `titulo` lleva "DR." / "DRA." según el sexo (`KD.nombrePersona`).
 - **Dinero** solo con el permiso `dinero` (`KD.verDinero()`): no mostrar precios, montos ni ingresos sin él (la excepción es el monto a cobrar de cada paciente, que recepción sí ve para cobrar; requisitos §2.2).
+- **Quién atiende pacientes se decide por persona** (`KD.atiende`; en la API, `trabajador.atiende`): sale marcado según el puesto y se puede activar, por ejemplo, a un administrador que también es dentista. Solo quien atiende aparece como doctor y puede tener citas a su nombre.
 - La agenda es **por unidad** (sillón): nunca dos citas en la misma unidad a la vez (`choqueUnidad`). Sin `agenda_todas`, el usuario ve solo sus citas.
 - Al **cancelar o eliminar** una cita se pide motivo (`KD.pedirMotivo`) y se guarda quién y cuándo. La cancelada queda en `citas` con `cancelacion`; la eliminada pasa a `citasEliminadas` con `eliminacion`. Las dos salen de la agenda y se ven en el historial del paciente. En la base **ninguna cita se borra**: quedan con estado `cancelada` o `eliminada` y `baja_motivo`/`baja_por`/`baja_en` (`POST /api/v1/citas/{id}/cancelar/` o `/eliminar/`).
 - Al crear o mover una cita solo se ofrecen horarios a las :00 y :30 (`AG_PASO`), sin pasado y con al menos una unidad libre. Si el **doctor** ya tiene otra cita a esa hora, **se avisa diciendo cuál es y quien agenda decide** (`avisoDoctor`; en la API, `confirmar_empalme`). Decidido en octubre 2026 (v0.6.0).
@@ -61,7 +62,7 @@
   | `docs-al-dia` | sonnet | contradicciones entre documentos y entre documentos y código (cita las dos partes, no decide) | siempre |
   | `reglas-negocio` | opus | cambios contra las reglas de `docs/requisitos.md` y de este archivo; lo decidido y no programado sale 🟡 "pendiente conocido" | si cambia backend, pantallas o documentos de reglas |
   | `seguridad-datos` | opus | aislamiento entre clínicas (RLS, llaves compuestas, `kd_app`), permisos por vista, secretos, migraciones nuevas; consulta la base de QA solo en lectura | si cambia el backend |
-  | `qa-backend` | sonnet | pruebas de la API (19) y pruebas SQL (29 rechazos) en Docker; la verificación desde cero (`down -v`) solo si se pide, porque borra los datos ficticios de QA | si cambia el backend |
+  | `qa-backend` | sonnet | pruebas de la API (21) y pruebas SQL (29 rechazos) en Docker; la verificación desde cero (`down -v`) solo si se pide, porque borra los datos ficticios de QA | si cambia el backend |
 
   Cada agente también se puede usar solo ("usa el agente seguridad-datos"). Para pasarle a `/revision` el título y la descripción del PR: `/revision <título y descripción>`.
   **Faltan por agregar:** `qa-pantallas` y `paridad-prototipo` con el frontend nuevo (`docs/frontend.md`, fases F0 y F1), y `preproduccion-legal` al preparar producción (§6 "Para después").
