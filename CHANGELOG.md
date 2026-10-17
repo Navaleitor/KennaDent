@@ -24,6 +24,9 @@ La API cumple las reglas de acceso y de agenda decididas en octubre (sección 6 
 - El aviso del doctor ocupado sale al crear o al cambiar hora, duración o doctor; no al cambiar solo la nota o el estado.
 - 6 pruebas automáticas nuevas de la API (19 en total) y 2 casos nuevos en las pruebas SQL (29 rechazos esperados).
 
+### Decidido
+- **Frontend real en React + TypeScript**, conectado a la API, como base para muchas clínicas y uso en línea. La estructura (tecnología, carpetas, reglas, escala y fases F0 a F3) está en [`docs/frontend.md`](docs/frontend.md). El prototipo se queda como demo y referencia de diseño.
+
 ### Agentes y documentos
 - `reglas-negocio` marca como 🟡 "pendiente conocido" una regla que todavía falta, si ya está anotada para una entrega futura y el cambio no la empeora. Las decisiones anotadas son definitivas: Kenia y su hermano deciden con el mismo peso (también en `CLAUDE.md`).
 - `qa-backend` no guarda la salida en archivos, ni siquiera temporales. Se corrigió la referencia a su paso 3 (verificación desde cero), que ya se probó: migraciones 0001 a 0005 y demo sin errores.

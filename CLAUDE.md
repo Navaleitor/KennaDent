@@ -12,6 +12,7 @@
 - Los campos vacíos (`""`) no se guardan: al leer, tratarlos como opcionales (`KD.esc` ya acepta `undefined`).
 - Los scripts son clásicos (no módulos ES) para que funcione abriendo `index.html` con doble clic. Todo cuelga de `window.KD`.
 - Todo texto que venga de datos se escapa con `KD.esc()` antes de meterlo en `innerHTML`.
+- **Frontend real: React + TypeScript en `frontend/`** (decidido en octubre de 2026, v0.6.0). La estructura, las reglas y las fases están en `docs/frontend.md`: seguirla en todo trabajo de frontend nuevo. El prototipo (`index.html`, `js/`, `css/`) queda como demo y referencia de diseño y reglas; no se conecta a la API.
 - **Backend: Django 5.2 LTS + Django REST Framework + PostgreSQL 16** (decidido en octubre de 2026). Vive en `backend/`; el prototipo todavía no lo consume.
   - **El esquema lo definen las migraciones de Django** (`backend/nucleo/migrations/`). `docs/modelo-datos/kennadent_esquema_v0.2.sql` queda como especificación; `pruebas/pruebas_django.sql` comprueba que el esquema de Django se comporta igual.
   - Lo que el ORM no sabe declarar (llaves compuestas `(empresa_id, x_id)`, triggers, vistas, Row Level Security, permisos de `kd_app`) va en migraciones `RunSQL` (ver `0002_base_de_datos.py`). Toda tabla nueva de un cliente hereda de `DeEmpresa` y necesita su política RLS y sus llaves compuestas en una migración nueva.

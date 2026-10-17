@@ -69,7 +69,7 @@ Esta lista es un recordatorio; manda lo que digan los documentos. Para cada regl
 
 **Otras**
 - Nombres en **mayúsculas** al guardar (`KD.mayus()`); "DR." / "DRA." según el sexo para el personal clínico con título.
-- Texto que viene de datos se escapa con `KD.esc()` antes de ir a `innerHTML`.
+- Texto que viene de datos se escapa con `KD.esc()` antes de ir a `innerHTML` (prototipo). En el frontend nuevo (`frontend/`): nunca `dangerouslySetInnerHTML`, y se siguen la estructura y las reglas de `docs/frontend.md` (permisos con `usePuede`, fechas en la zona de la sucursal, listas paginadas en el servidor).
 - **Ningún dato real de pacientes**: datos de demostración solo inventados.
 - Odontograma: rojo = por tratar, azul = realizado. Inventario: proyección de una semana, de miércoles a martes.
 
