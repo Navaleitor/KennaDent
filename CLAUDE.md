@@ -3,6 +3,7 @@
 ## El proyecto
 - **KennaDent** (nombre sujeto a cambio) es un software de gestión para clínicas dentales con varias sucursales, vendido por suscripción mensual. Es de **uso interno** de la clínica: los pacientes no entran al sistema.
 - La dueña del producto es **Kenia**, dentista. El repositorio lo maneja su hermano, que no es programador: explicarle todo en español claro y sin tecnicismos innecesarios.
+- **Las decisiones de él valen lo mismo que las de Kenia.** Lo que cualquiera de los dos decide y queda anotado es definitivo: no pedir que el otro lo confirme.
 - Requisitos, fases y pendientes: `docs/requisitos.md`. Leerlo antes de proponer cambios de funcionalidad y mantenerlo actualizado cuando se tomen decisiones nuevas.
 
 ## Estado actual
