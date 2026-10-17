@@ -571,7 +571,10 @@ KD.formCita = (datos) => {
     const choque = choqueUnidad(prueba);
     if (choque) { mostrar(`${KD.esc(choque)} Elige otra hora u otra unidad.`); return; }
     // Doctor con otra cita: el primer clic avisa cuál es; el segundo (con los mismos datos) agenda de todos modos
-    const avisoDoc = avisoDoctor(prueba);
+    // Solo si cambió el doctor, el día, la hora o la duración (no al editar la nota), como en la API
+    const cambioAgenda = !existente || existente.doctorId !== prueba.doctorId || existente.fecha !== prueba.fecha
+      || existente.hora !== prueba.hora || Number(existente.duracion) !== prueba.duracion;
+    const avisoDoc = cambioAgenda ? avisoDoctor(prueba) : "";
     const clave = [prueba.doctorId, prueba.fecha, prueba.hora, prueba.duracion].join("|");
     if (avisoDoc && avisoAceptado !== clave) {
       avisoAceptado = clave;

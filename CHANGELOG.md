@@ -36,7 +36,7 @@ La API cumple las reglas de acceso y de agenda decididas en octubre (sección 6 
   - `revisor-pr`: checklist de forma del PR (versión, CHANGELOG, "Fixes #N", sin firmas).
 - **Hook de solo lectura** (`.claude/hooks/solo_lectura.py`): ningún agente de revisión puede escribir. Bloquea todo comando que no sea de consulta y aprueba solo los de consulta. Antes, la lista de herramientas de los agentes no limitaba Bash de verdad.
 - `reglas-negocio`: 🔴 solo para código nuevo que contradice una regla o rompe algo que ya funcionaba.
-- `qa-backend` no guarda la salida en archivos, ni siquiera temporales. Se corrigió la referencia a su paso 3 (verificación desde cero), que ya se probó: migraciones 0001 a 0005 y demo sin errores.
+- `qa-backend` no guarda la salida en archivos, ni siquiera temporales. Se corrigió la referencia a su paso 3 (verificación desde cero), que ya se probó: migraciones 0001 a 0005 y demo sin errores. La 0006 (quién atiende) llegó después: se aplicó sobre la base de QA con datos y en la base temporal de las pruebas, sin errores.
 - Regla aclarada en `CLAUDE.md` y `docs/requisitos.md`: doctor ocupado = se avisa y quien agenda decide. También se quitó la contradicción sobre la entrada con correo.
 
 ## [0.5.1] - 2026-10-16

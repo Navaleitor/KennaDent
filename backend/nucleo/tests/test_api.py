@@ -222,6 +222,10 @@ class ApiTest(APITestCase):
         r = self.cita(trabajador=daniela, unidad=self.unidad2)
         self.assertEqual(r.status_code, 400)
         self.assertIn("no atiende pacientes", r.json()["trabajador"][0])
+        # Al dar de alta a alguien sin indicarlo, "atiende" se copia de su puesto
+        nuevo_doc = Trabajador.objects.create(empresa_id=kenia.empresa_id, puesto_id="odontologo", nombre="NUEVO DOCTOR")
+        nueva_rec = Trabajador.objects.create(empresa_id=kenia.empresa_id, puesto_id="recepcion", nombre="NUEVA RECEPCION")
+        self.assertEqual((nuevo_doc.atiende, nueva_rec.atiende), (True, False))
 
     def test_aviso_de_otra_sucursal_solo_dice_horario_y_sucursal(self):
         # MARIANA atiende en CUMBRES y SAN PEDRO; ya tiene cita en SAN PEDRO a esa hora
