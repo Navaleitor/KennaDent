@@ -110,7 +110,9 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = env_bool("KD_COOKIES_SEGURAS", False)   # True en la nube (HTTPS)
 CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
-SESSION_COOKIE_AGE = 60 * 60 * 10   # una jornada
+# La sesion se cierra tras 30 minutos sin uso: cada peticion vuelve a contar desde cero (requisitos, seccion 6)
+SESSION_COOKIE_AGE = 30 * 60
+SESSION_SAVE_EVERY_REQUEST = True
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],

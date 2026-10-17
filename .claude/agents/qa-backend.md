@@ -32,8 +32,8 @@ Debe mostrar `db` y `api` como **healthy**. Si dice `Cannot connect to the Docke
 docker compose exec -T -e KD_DB_ROL=admin api python manage.py test nucleo -v 2 --noinput
 ```
 
-- Esperado: **13 pruebas** y al final `OK`. (`--noinput` borra sola la base temporal de una corrida anterior que se haya quedado.)
-- Cuenta cuántas pasaron y cuántas fallaron (`FAIL`) o dieron error (`ERROR`). Si el total ya no es 13, dilo: alguien agregó o quitó pruebas.
+- Esperado: **19 pruebas** y al final `OK`. (`--noinput` borra sola la base temporal de una corrida anterior que se haya quedado.)
+- Cuenta cuántas pasaron y cuántas fallaron (`FAIL`) o dieron error (`ERROR`). Si el total ya no es 19, dilo: alguien agregó o quitó pruebas.
 - Por cada falla: nombre de la prueba, el mensaje (la línea `AssertionError` o la excepción) y el archivo probable. Las pruebas están en `backend/nucleo/tests/test_api.py`; el código que prueban suele estar en `backend/nucleo/api/vistas.py`, `serializers.py`, `permisos.py`, `errores.py`, en `backend/nucleo/models/` o en las migraciones `RunSQL` (`backend/nucleo/migrations/0002_base_de_datos.py`). Lee la prueba que falló para señalar el archivo con fundamento.
 
 ## Paso 2. Pruebas SQL del modelo (siempre)
@@ -55,7 +55,7 @@ Detalles:
 - `MSYS_NO_PATHCONV=1` evita que Git Bash en Windows convierta `/kd/pruebas/...` en una ruta de Windows (`C:/Program Files/Git/kd/...`). En Mac y Linux no estorba. Cada llamada de Bash empieza de cero, por eso todo va junto.
 - La carpeta `docs/modelo-datos/pruebas/` está montada dentro del contenedor `db` como `/kd/pruebas/` (solo lectura).
 - Cada prueba imprime su título (`== T1: ...` o `-- T9b: ...`) y dice si **DEBE PASAR** o **DEBE FALLAR**.
-- Esperado: **27 líneas `ERROR:`**, todas debajo de títulos que dicen **DEBE FALLAR**. Eso significa que la base rechaza bien lo inválido.
+- Esperado: **29 líneas `ERROR:`**, todas debajo de títulos que dicen **DEBE FALLAR**. Eso significa que la base rechaza bien lo inválido.
 - Es **falla** si: una prueba que DEBE FALLAR no muestra `ERROR:` (la base dejó pasar algo inválido) o una que DEBE PASAR muestra `ERROR:`. Repórtalas con su título y el mensaje.
 - La salida esperada está en `docs/modelo-datos/pruebas/pruebas_django.salida.txt` para comparar.
 - Si la base `pruebas` no se pudo crear o la migración falló, reporta el error de ese paso y no sigas con el `psql`.
@@ -104,8 +104,8 @@ docker compose logs api --tail 80
 
 | Prueba | Resultado |
 |---|---|
-| API (Django) | 13 de 13 pasaron |
-| SQL del modelo (pruebas_django.sql) | 27 de 27 rechazos esperados, 0 sorpresas |
+| API (Django) | 19 de 19 pasaron |
+| SQL del modelo (pruebas_django.sql) | 29 de 29 rechazos esperados, 0 sorpresas |
 | Migraciones desde cero | No se pidió |
 
 ### Fallas

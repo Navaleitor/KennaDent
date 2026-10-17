@@ -73,7 +73,7 @@ Reglas de acceso acordadas (Issues #10 y #11):
 - **Arrastrar** una cita para cambiarla de hora o de unidad; **estirar** desde abajo para cambiar la duración. Cancelar o eliminar libera el espacio.
 - La hora se elige de una lista **cada 30 minutos (solo :00 y :30)** que marca los horarios ocupados de la unidad (Issues #3, #9 y #15). Arrastrar una cita también la acomoda a :00 o :30. Las duraciones no cambian (15, 45, 75 min… siguen existiendo).
 - **No se agenda en el pasado:** no se puede crear ni mover una cita a un día u hora que ya pasó (#14). Los días pasados se siguen viendo con todas sus citas; la parte que ya pasó se ve rayada.
-- **Nueva cita en orden** (#17): paciente → sucursal → doctor → tipo/tratamiento (da la duración) → fecha y hora (solo con el doctor libre y al menos una unidad libre) → unidad (solo las desocupadas). Cada paso se habilita al llenar el anterior.
+- **Nueva cita en orden** (#17): paciente → sucursal → doctor → tipo/tratamiento (da la duración) → fecha y hora (con al menos una unidad libre; si el doctor ya tiene otra cita se marca y se avisa) → unidad (solo las desocupadas). Cada paso se habilita al llenar el anterior.
 - **Cancelar o eliminar pide motivo** (#18): lista de motivos u "Otro" con texto. Se guarda quién y cuándo. Puede hacerlo quien edita la agenda. La cita sale de la agenda y queda en el historial del paciente con su motivo (#19).
 - Arriba de la agenda: vista (Día/Semana/Mes) a la izquierda, sucursal y doctor fijos a la derecha y las unidades en su propio renglón (#13).
 - No se permite empalmar dos citas en la misma unidad; si el doctor ya tiene otra cita **se avisa y quien agenda decide**. El aviso dice qué cita es: *"DRA. ANDREA GARZA LEAL ya tiene una cita de 10:00 a 10:50 (RESINA ESTÉTICA, JUAN PÉREZ) en UNIDAD 2"*.
@@ -153,6 +153,8 @@ Decidido (septiembre 2026): la agenda es por unidad; el doctor ve solo su agenda
 
 Decidido (octubre 2026): citas solo a las :00 y :30; no se agenda en el pasado; al eliminar **o** cancelar una cita se pide motivo, la cita desaparece de la agenda y queda en el historial del paciente; puede hacerlo quien edita la agenda (v0.4.0, #18 y #19).
 
+Decidido (octubre 2026, v0.6.0): si el doctor ya tiene otra cita a esa hora, **se avisa diciendo cuál es y quien agenda decide** (al crear y al mover); el sillón ocupado sí se bloquea. Una cita **eliminada** no se borra de la base: queda con estado "eliminada", motivo, quién y cuándo, igual que la cancelada. Pagos y movimientos de dinero no se editan ni se borran: se corrigen con un movimiento nuevo (ya lo aplica la base).
+
 Decidido (octubre 2026): antes de cada pull request se corren dos **agentes de revisión** que solo reportan con semáforo y nunca corrigen ni unen (v0.5.1): `reglas-negocio` revisa que los cambios respeten las reglas de este documento y de `CLAUDE.md` (un 🔴 bloquea el PR) y `qa-backend` corre las pruebas automáticas del backend y del modelo de datos. Están en `.claude/agents/`.
 
 ## 6. Decisiones de octubre 2026 (backend, seguridad y reglas)
@@ -190,6 +192,6 @@ Acordadas al revisar el documento de seguridad, privacidad y reglas del negocio.
 
 - **Prototipo actual:** HTML, CSS y JavaScript sin dependencias. Los datos son de ejemplo y se guardan en el navegador (`localStorage`), así que cada persona que lo abre ve su propia copia.
 - **Producción (decidido, octubre 2026):** backend en **Django 5.2 LTS + Django REST Framework** sobre **PostgreSQL 16**, con *Row Level Security* para que ninguna empresa pueda ver datos de otra, autenticación real y respaldos. El frontend actual se conectará a la API (`/api/v1/`). Modelo de datos: `docs/modelo-datos/` (validación y propuesta v0.2, ya implementada como migraciones de Django en `backend/`).
-- **Inicio de sesión:** código de la clínica + usuario (`demo` / `andrea.garza`) o correo. Pendiente de confirmar cuál se muestra en la pantalla de entrada.
+- **Inicio de sesión:** código de la clínica + usuario (`demo` / `andrea.garza`) + contraseña, sin correos (sección 6). La sesión se cierra tras 30 minutos sin uso y la contraseña inicial bloquea todo hasta cambiarla (v0.6.0).
 - **Datos de salud:** cumplir con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, NOM-004-SSA3-2012 (expediente clínico) y NOM-024-SSA3-2012 (sistemas de información de registro electrónico para la salud). Esto incluye aviso de privacidad, cifrado y bitácora de quién consulta cada expediente.
 - **Contraseñas:** en el prototipo se guardan tal cual para que el administrador las vea (Issue #6). En producción deben guardarse cifradas (*hash*); el administrador solo verá la contraseña inicial al crearla o regenerarla, y el empleado la cambiará al entrar por primera vez.

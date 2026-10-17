@@ -180,8 +180,9 @@ Todos son **ficticios** y siguen la demo del prototipo:
 Las pruebas automáticas crean una base temporal, cargan la demo y comprueban:
 - el inicio de sesión;
 - el aislamiento entre clínicas;
-- los permisos (precios, agenda propia);
-- las reglas de la agenda (sillón ocupado, doctor de otra sucursal, aviso de empalme);
+- los permisos (precios, agenda propia, gerente solo en su sucursal);
+- la sesión de 30 minutos, que no se entra con correo y que la contraseña inicial bloquea todo hasta cambiarla;
+- las reglas de la agenda (sillón ocupado, doctor de otra sucursal, aviso de empalme con el detalle de la cita, solo a las :00 y :30, nada en el pasado, cancelar y eliminar con motivo);
 - el alta y la baja de pacientes y la bitácora.
 
 Al final deben decir `OK`.
@@ -194,7 +195,7 @@ docker compose exec -e KD_DB_ROL=admin -e KD_DB_NOMBRE=pruebas api python manage
 docker compose exec db psql -U kennadent -d pruebas -f /kd/pruebas/pruebas_django.sql
 ```
 
-Deben aparecer **27 líneas `ERROR`**: son los casos "DEBE FALLAR", es decir, la base rechaza bien los datos inválidos. Para repetirlas, primero borra esa base: `docker compose exec db dropdb -U kennadent pruebas`.
+Deben aparecer **29 líneas `ERROR`**: son los casos "DEBE FALLAR", es decir, la base rechaza bien los datos inválidos. Para repetirlas, primero borra esa base: `docker compose exec db dropdb -U kennadent pruebas`.
 
 ---
 

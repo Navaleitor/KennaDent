@@ -234,7 +234,7 @@ WHERE make_time(h, 0, 0) < sh.cierra
   AND (NOT tu.no_viernes   OR extract(isodow FROM d) <> 5);
 
 INSERT INTO cita (empresa_id, sucursal_id, unidad_id, paciente_id, trabajador_id, tipo_cita_id, tratamiento_id, piezas,
-                  inicio, fin, estado, creado_por)
+                  inicio, fin, estado, creado_por, baja_motivo, baja_por, baja_en)
 SELECT a.empresa_id, a.sucursal_id, a.unidad_id,
        (SELECT id FROM paciente p WHERE p.empresa_id = a.empresa_id
          ORDER BY p.id OFFSET floor(a.r2 * (SELECT count(*) FROM paciente q WHERE q.empresa_id = a.empresa_id)) LIMIT 1),
@@ -250,8 +250,16 @@ SELECT a.empresa_id, a.sucursal_id, a.unidad_id,
          WHEN (a.dia + make_time(a.h, 0, 0)) AT TIME ZONE a.zona_horaria < now() THEN 'en_sala'
          WHEN a.r3 < 0.5 THEN 'confirmada' ELSE 'programada' END,
        (SELECT ts.trabajador_id FROM trabajador_sucursal ts JOIN trabajador w ON w.id = ts.trabajador_id
-         WHERE ts.sucursal_id = a.sucursal_id AND w.puesto_id = 'recepcion' LIMIT 1)
+         WHERE ts.sucursal_id = a.sucursal_id AND w.puesto_id = 'recepcion' LIMIT 1),
+       -- Las canceladas llevan motivo, quien y cuando (como en el prototipo)
+       b.motivo,
+       CASE WHEN b.motivo IS NOT NULL THEN (SELECT ts.trabajador_id FROM trabajador_sucursal ts JOIN trabajador w ON w.id = ts.trabajador_id
+         WHERE ts.sucursal_id = a.sucursal_id AND w.puesto_id = 'recepcion' LIMIT 1) END,
+       CASE WHEN b.motivo IS NOT NULL THEN (a.dia + make_time(a.h, 0, 0)) AT TIME ZONE a.zona_horaria - make_interval(days => a.h % 3) END
 FROM agenda a
+CROSS JOIN LATERAL (SELECT CASE WHEN (a.dia + make_time(a.h, 50, 0)) AT TIME ZONE a.zona_horaria < now() AND a.r3 >= 0.93
+                    THEN (ARRAY['El paciente cancelo', 'El paciente reagendara', 'Reagendada por la clinica',
+                                'El doctor no esta disponible'])[1 + a.h % 4] END AS motivo) b
 JOIN LATERAL (SELECT * FROM tipo_cita WHERE empresa_id = a.empresa_id
                ORDER BY id OFFSET (CASE WHEN a.empresa_id = 2 THEN 0 ELSE floor(a.r2 * 1000)::int % 5 END) LIMIT 1) tc ON true
 JOIN LATERAL (SELECT * FROM tratamiento WHERE empresa_id = a.empresa_id

@@ -1,6 +1,6 @@
 -- Las mismas pruebas de pruebas_v0.2.sql, contra la base que crean las migraciones de Django
 -- (unica diferencia: empresa.codigo, que Django agrega para iniciar sesion).
--- mas las pruebas nuevas (T11..T22). Cada una dice que DEBE pasar.
+-- mas las pruebas nuevas (T11..T20) y las de v0.6.0 (T21, citas canceladas o eliminadas). Cada una dice que DEBE pasar.
 SET search_path = kennadent, public;
 
 -- Datos minimos: dos empresas clientes independientes
@@ -22,8 +22,8 @@ INSERT INTO cita(empresa_id,sucursal_id,unidad_id,paciente_id,trabajador_id,inic
 VALUES (1,1,1,3,1,'2026-10-01 10:30-06','2026-10-01 11:30-06');
 
 \echo '== T3: cita cancelada en el mismo horario (DEBE PASAR)'
-INSERT INTO cita(empresa_id,sucursal_id,unidad_id,paciente_id,trabajador_id,inicio,fin,estado)
-VALUES (1,1,1,3,1,'2026-10-01 10:30-06','2026-10-01 11:30-06','cancelada');
+INSERT INTO cita(empresa_id,sucursal_id,unidad_id,paciente_id,trabajador_id,inicio,fin,estado,baja_motivo,baja_en)
+VALUES (1,1,1,3,1,'2026-10-01 10:30-06','2026-10-01 11:30-06','cancelada','El paciente cancelo',now());
 \echo '-- T3b: reactivar esa cita cancelada choca con la T1 (DEBE FALLAR)'
 UPDATE cita SET estado='programada' WHERE id=3;
 \echo '-- T3c: cita "no_asistio" en el mismo horario (DEBE PASAR)'
@@ -172,3 +172,13 @@ UPDATE pago SET monto = 1 WHERE id = 1;
 RESET ROLE;
 RESET app.empresa_id;
 SELECT nombre FROM paciente WHERE id=1;
+
+-- Pruebas de v0.6.0 (al final para no mover los numeros de cita de arriba)
+\echo '== T21: cita cancelada SIN motivo (DEBE FALLAR por cita_baja_con_motivo)'
+INSERT INTO cita(empresa_id,sucursal_id,unidad_id,paciente_id,trabajador_id,inicio,fin,estado)
+VALUES (1,1,2,3,1,'2026-10-02 10:00-06','2026-10-02 10:30-06','cancelada');
+\echo '-- T21b: cita eliminada con motivo, en el horario de la T1 (DEBE PASAR: libera el sillon)'
+INSERT INTO cita(empresa_id,sucursal_id,unidad_id,paciente_id,trabajador_id,inicio,fin,estado,baja_motivo,baja_en)
+VALUES (1,1,1,3,1,'2026-10-01 10:00-06','2026-10-01 10:30-06','eliminada','Error de captura',now());
+\echo '-- T21c: borrar una cita (DEBE FALLAR: se cancela o elimina, nunca se borra)'
+DELETE FROM cita WHERE id = 1;

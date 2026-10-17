@@ -55,6 +55,9 @@ class CitaAdmin(admin.ModelAdmin):
     list_filter = ["empresa", "estado", "sucursal"]
     date_hierarchy = "inicio"
 
+    def has_delete_permission(self, request, obj=None):
+        return False   # las citas no se borran: se cancelan o eliminan con motivo (cita_no_borrar)
+
 
 @admin.register(m.Tratamiento)
 class TratamientoAdmin(admin.ModelAdmin):

@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as ErrorDjango
 from django.db.models import Q
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import mixins, status, viewsets
@@ -14,10 +15,10 @@ from rest_framework.views import APIView
 
 from nucleo.empresa_actual import fijar_contexto
 from nucleo.models import Bitacora, Cita, Paciente, Sucursal, TipoCita, Trabajador, TrabajadorSucursal, Tratamiento
-from nucleo.models.usuarios import Usuario
+from nucleo.models.clinico import ESTADOS_BAJA_CITA
 
 from .errores import guardar_con_reglas
-from .permisos import TienePermisos, permisos_de, puede, trabajador_de
+from .permisos import TienePermisos, permisos_de, puede, sucursales_de, trabajador_de
 from .serializers import (CitaSerializer, PacienteSerializer, SucursalSerializer, TipoCitaSerializer,
                           TrabajadorSerializer, TratamientoSerializer)
 
@@ -43,8 +44,8 @@ def datos_sesion(request):
 class SesionView(APIView):
     """GET: quien soy (y entrega la cookie CSRF). POST: iniciar sesion. DELETE: salir.
 
-    Inicio de sesion con {empresa, usuario, password} (ej. demo / andrea.garza)
-    o con {email, password}.
+    Inicio de sesion con {empresa, usuario, password} (ej. demo / andrea.garza).
+    Sin correos (requisitos, seccion 6). La sesion se cierra tras 30 minutos sin uso.
     """
 
     permission_classes = [AllowAny]
@@ -62,10 +63,7 @@ class SesionView(APIView):
         datos = request.data
         password = datos.get("password") or ""
         login_clave = None
-        if datos.get("email"):
-            u = Usuario.objects.filter(email=str(datos["email"]).strip().lower()).first()
-            login_clave = u.login if u else None
-        elif datos.get("usuario"):
+        if datos.get("usuario"):
             # La empresa no se consulta aqui: antes de iniciar sesion RLS no deja verla.
             # La clave de acceso ya incluye el codigo: 'demo/andrea.garza'.
             codigo = str(datos.get("empresa") or "").strip().lower()
@@ -130,8 +128,7 @@ class SucursalViewSet(BaseEmpresa, viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         qs = Sucursal.objects.filter(activo=True).order_by("id")
         if not puede(self.request, "todas_sucursales"):
-            qs = qs.filter(id__in=TrabajadorSucursal.objects.filter(trabajador=trabajador_de(self.request), activo=True)
-                           .values("sucursal_id"))
+            qs = qs.filter(id__in=sucursales_de(self.request))
         return qs
 
 
@@ -201,7 +198,6 @@ class PacienteViewSet(BaseEmpresa, mixins.CreateModelMixin, mixins.UpdateModelMi
 
     @action(detail=True, methods=["post"])
     def baja(self, request, pk=None):
-        from django.utils import timezone
         p = self.get_object()
         motivo = (request.data.get("motivo") or "").strip()
         if not motivo:
@@ -212,22 +208,31 @@ class PacienteViewSet(BaseEmpresa, mixins.CreateModelMixin, mixins.UpdateModelMi
 
 
 class CitaViewSet(BaseEmpresa, mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet):
-    """Agenda. ?desde=&hasta= (fechas ISO), ?sucursal=, ?trabajador=.
-    Sin "agenda_todas" cada persona ve solo sus citas."""
+    """Agenda. ?desde=&hasta= (fechas ISO), ?sucursal=, ?trabajador=, ?unidad=, ?paciente=.
+    Sin "agenda_todas" cada persona ve solo sus citas; sin "todas_sucursales",
+    solo las de sus sucursales (y siempre las suyas). Las canceladas y eliminadas
+    no salen en la agenda; para el historial del paciente: ?paciente=&bajas=1.
+    Cancelar o eliminar: POST /citas/{id}/cancelar/ o /eliminar/ con {motivo}."""
 
     serializer_class = CitaSerializer
     pagination_class = None
     permisos_por_accion = {
         "list": "agenda_ver", "retrieve": "agenda_ver",
         "create": "agenda_editar", "update": "agenda_editar", "partial_update": "agenda_editar",
+        "cancelar": "agenda_editar", "eliminar": "agenda_editar",
     }
 
     def get_queryset(self):
         qp = self.request.query_params
+        yo = trabajador_de(self.request)
         qs = Cita.objects.select_related("paciente", "trabajador").order_by("inicio", "unidad_id")
         if not puede(self.request, "agenda_todas"):
-            qs = qs.filter(trabajador=trabajador_de(self.request))
+            qs = qs.filter(trabajador=yo)
+        if not puede(self.request, "todas_sucursales"):
+            qs = qs.filter(Q(sucursal_id__in=sucursales_de(self.request)) | Q(trabajador=yo))
         if self.action == "list":
+            if qp.get("bajas") != "1":
+                qs = qs.exclude(estado__in=ESTADOS_BAJA_CITA)
             desde, hasta = parse_datetime(qp.get("desde", "") or ""), parse_datetime(qp.get("hasta", "") or "")
             if not desde or not hasta:
                 from rest_framework.exceptions import ValidationError
@@ -236,7 +241,30 @@ class CitaViewSet(BaseEmpresa, mixins.CreateModelMixin, mixins.UpdateModelMixin,
                 from rest_framework.exceptions import ValidationError
                 raise ValidationError({"detail": "El rango maximo es de 62 dias."})
             qs = qs.filter(inicio__lt=hasta, fin__gt=desde)
-            for campo in ("sucursal", "trabajador", "unidad"):
+            for campo in ("sucursal", "trabajador", "unidad", "paciente"):
                 if qp.get(campo):
                     qs = qs.filter(**{f"{campo}_id": qp[campo]})
         return qs
+
+    def _dar_de_baja(self, request, estado):
+        cita = self.get_object()
+        motivo = (request.data.get("motivo") or "").strip()
+        if not motivo:
+            return Response({"detail": "Indica el motivo."}, status=status.HTTP_400_BAD_REQUEST)
+        if cita.estado in ESTADOS_BAJA_CITA:
+            return Response({"detail": f"Esta cita ya esta {cita.estado}."}, status=status.HTTP_400_BAD_REQUEST)
+        cita.estado, cita.baja_motivo = estado, motivo
+        cita.baja_por, cita.baja_en = trabajador_de(request), timezone.now()
+        with guardar_con_reglas():
+            cita.save(update_fields=["estado", "baja_motivo", "baja_por", "baja_en"])
+        return Response(self.get_serializer(cita).data)
+
+    @action(detail=True, methods=["post"])
+    def cancelar(self, request, pk=None):
+        """Sale de la agenda y libera el sillon; queda en el historial del paciente."""
+        return self._dar_de_baja(request, "cancelada")
+
+    @action(detail=True, methods=["post"])
+    def eliminar(self, request, pk=None):
+        """Igual que cancelar, pero marcada como eliminada (p. ej. error de captura). Nunca se borra."""
+        return self._dar_de_baja(request, "eliminada")

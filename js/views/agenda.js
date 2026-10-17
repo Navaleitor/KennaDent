@@ -226,28 +226,40 @@ function activarCita(el, editar, sucId) {
       const cambios = redimensionar ? { duracion: nuevaDur } : { hora: KD.aHora(nuevoIni), fecha: colDestino.dataset.fecha, unidad: Number(colDestino.dataset.unidad) };
       if (!redimensionar && enPasado(cambios.fecha, cambios.hora)) { KD.toast("No se puede mover una cita a un día u hora que ya pasó.", "bad"); KD.render(); return; }
       const prueba = { ...c, ...cambios };
-      const choque = choqueCita(prueba);
+      const choque = choqueUnidad(prueba);
       if (choque) { KD.toast(choque, "bad"); KD.render(); return; }
-      Object.assign(c, cambios);
-      KD.guardar();
-      KD.render();
-      KD.toast(redimensionar ? `Duración: ${c.duracion} min` : `Cita movida a las ${c.hora}${cambios.unidad !== undefined ? ` · Unidad ${c.unidad}` : ""}${c.fecha !== KD.hoy() ? ` · ${KD.fmtFecha(c.fecha, { weekday: "short", day: "numeric", month: "short" })}` : ""}`);
+      const aplicar = () => {
+        Object.assign(c, cambios);
+        KD.guardar();
+        KD.render();
+        KD.toast(redimensionar ? `Duración: ${c.duracion} min` : `Cita movida a las ${c.hora}${cambios.unidad !== undefined ? ` · Unidad ${c.unidad}` : ""}${c.fecha !== KD.hoy() ? ` · ${KD.fmtFecha(c.fecha, { weekday: "short", day: "numeric", month: "short" })}` : ""}`);
+      };
+      const aviso = avisoDoctor(prueba);
+      if (!aviso) return aplicar();
+      KD.render();   // regresa la cita a su lugar mientras se decide
+      KD.confirmar("El doctor ya tiene otra cita", `${KD.esc(aviso)} ¿Quieres hacer el cambio de todos modos?`, redimensionar ? "Cambiar de todos modos" : "Mover de todos modos", aplicar, false);
     };
     window.addEventListener("pointermove", mover);
     window.addEventListener("pointerup", soltar);
   });
 }
 
-// Una unidad no puede tener dos pacientes a la vez; un doctor tampoco puede estar en dos citas
-function choqueCita(c, ignorarDoctor = false) {
+// Citas activas que se enciman con c (otra cita, mismo día, sin contar canceladas ni "no asistió")
+const encimadas = (c) => {
   const ini = KD.aMinutos(c.hora), fin = ini + Number(c.duracion);
-  const activa = (x) => x.id !== c.id && x.fecha === c.fecha && !["cancelada", "no_asistio"].includes(x.estado) && KD.aMinutos(x.hora) < fin && KD.finCita(x) > ini;
-  const enUnidad = KD.db.citas.find((x) => activa(x) && x.sucursalId === c.sucursalId && (x.unidad || 1) === (c.unidad || 1));
-  if (enUnidad) return `La Unidad ${c.unidad} ya está ocupada a las ${enUnidad.hora} (${KD.byId("pacientes", enUnidad.pacienteId)?.nombre}).`;
-  if (ignorarDoctor) return "";
-  const doc = KD.db.citas.find((x) => activa(x) && x.doctorId === c.doctorId);
-  if (doc) return `${KD.nombreUsuario(c.doctorId)} ya tiene una cita a las ${doc.hora}.`;
-  return "";
+  return KD.db.citas.filter((x) => x.id !== c.id && x.fecha === c.fecha && !["cancelada", "no_asistio"].includes(x.estado) && KD.aMinutos(x.hora) < fin && KD.finCita(x) > ini);
+};
+// Una unidad no puede tener dos pacientes a la vez: esto sí se bloquea (texto plano)
+function choqueUnidad(c) {
+  const enUnidad = encimadas(c).find((x) => x.sucursalId === c.sucursalId && (x.unidad || 1) === (c.unidad || 1));
+  return enUnidad ? `La Unidad ${c.unidad} ya está ocupada a las ${enUnidad.hora} (${KD.byId("pacientes", enUnidad.pacienteId)?.nombre}).` : "";
+}
+// El doctor en dos citas a la vez: se avisa diciendo cuál es y quien agenda decide (requisitos 2.3). Texto plano.
+function avisoDoctor(c) {
+  const doc = encimadas(c).find((x) => x.doctorId === c.doctorId);
+  if (!doc) return "";
+  const que = doc.tratamientoId ? KD.nombreTrat(doc.tratamientoId) : KD.byId("tiposCita", doc.tipoId)?.nombre;
+  return `${KD.nombreUsuario(c.doctorId)} ya tiene una cita de ${doc.hora} a ${KD.aHora(KD.finCita(doc))} (${que ? `${que}, ` : ""}${KD.byId("pacientes", doc.pacienteId)?.nombre}) en UNIDAD ${doc.unidad || 1}.`;
 }
 
 function cambiarEstado(c, estado) {
@@ -368,7 +380,8 @@ KD.detalleCita = (id) => {
 
 // ---------- Alta / edición de cita (#17) ----------
 // Se llena en orden: paciente → sucursal → doctor → tratamiento (da la duración) → fecha y hora
-// (solo horarios con el doctor libre) → unidad (solo sillas libres). Cada paso se habilita al llenar el anterior.
+// (con al menos una silla libre; si el doctor está ocupado se marca y se avisa) → unidad (solo sillas libres).
+// Cada paso se habilita al llenar el anterior.
 const activaEnAgenda = (x) => !["cancelada", "no_asistio"].includes(x.estado);
 const seEnciman = (x, ini, fin) => KD.aMinutos(x.hora) < fin && KD.finCita(x) > ini;
 
@@ -390,7 +403,7 @@ KD.formCita = (datos) => {
 
   const m = KD.modal({
     titulo: existente ? "Editar cita" : "Nueva cita",
-    subtitulo: "Llena los pasos en orden: solo se ofrecen los horarios en que el doctor está libre y las unidades (sillones) desocupadas.",
+    subtitulo: "Llena los pasos en orden: se ofrecen los horarios con unidades (sillones) desocupadas. Si el doctor ya tiene otra cita a esa hora, se marca y se te avisa antes de guardar.",
     ancho: "ancho",
     cuerpo: `<form class="form-grid" novalidate>
       <label class="campo full"><span><b class="paso-num">1</b> Paciente <em>*</em></span>
@@ -415,6 +428,8 @@ KD.formCita = (datos) => {
     acciones: `<button class="btn btn-ghost" data-cerrar>Cancelar</button><button class="btn" data-guardar>${KD.icon("check", 16)} ${existente ? "Guardar cambios" : "Crear cita"}</button>`,
   });
   const f = m.querySelector("form");
+  const textoGuardar = m.querySelector("[data-guardar]").innerHTML;
+  let avisoAceptado = "";   // horario en que ya se avisó que el doctor tiene otra cita
   const pacActual = () => pacientes.find((p) => etiquetaPac(p) === f.paciente.value) || pacientes.find((p) => p.expediente === f.paciente.value.trim().toUpperCase());
   const otras = () => KD.db.citas.filter((x) => x.id !== existente?.id && x.fecha === f.fecha.value && activaEnAgenda(x));
   const unidadesLibres = (t, dur, lista = otras()) => KD.unidades(f.sucursalId.value)
@@ -434,7 +449,7 @@ KD.formCita = (datos) => {
     f.unidad.disabled = !okHora;
   };
 
-  // Horarios cada AG_PASO minutos en que el doctor está libre toda la cita y queda al menos una silla
+  // Horarios cada AG_PASO minutos con al menos una silla libre; los que chocan con otra cita del doctor se marcan
   const pintarHoras = () => {
     const fe = f.fecha.value, dur = Number(f.duracion.value) || 30, doc = f.doctorId.value;
     const nota = m.querySelector("[data-sin-horas]");
@@ -446,32 +461,38 @@ KD.formCita = (datos) => {
     for (let t = AG_INICIO; t + dur <= AG_FIN; t += AG_PASO) {
       const esOriginal = original && fe === original.fecha && KD.aHora(t) === original.hora;
       if (enPasado(fe, KD.aHora(t)) && !esOriginal) continue;
-      if (delDoc.some((x) => seEnciman(x, t, t + dur))) continue;
       const libres = unidadesLibres(t, dur, lista).length;
-      if (libres) opciones.push({ t, libres });
+      if (libres) opciones.push({ t, libres, ocupado: delDoc.some((x) => seEnciman(x, t, t + dur)) });
     }
     if (original && fe === original.fecha && !opciones.some((o) => KD.aHora(o.t) === original.hora)) {
       const t = KD.aMinutos(original.hora);
-      if (!delDoc.some((x) => seEnciman(x, t, t + dur)) && unidadesLibres(t, dur, lista).length) opciones.push({ t, libres: unidadesLibres(t, dur, lista).length });
+      const libres = unidadesLibres(t, dur, lista).length;
+      if (libres) opciones.push({ t, libres, ocupado: delDoc.some((x) => seEnciman(x, t, t + dur)) });
       opciones.sort((a, b) => a.t - b.t);
     }
     const previo = f.hora.value || d.hora;
     if (!opciones.length) {
       f.hora.innerHTML = `<option value="">Sin horarios libres este día</option>`;
-      nota.innerHTML = `${KD.icon("alerta", 16)} <span>${KD.esc(KD.nombreUsuario(doc))} no tiene horarios libres de ${dur} minutos el ${KD.esc(KD.fmtFecha(fe, { weekday: "long", day: "numeric", month: "long" }))}${fe === KD.hoy() ? " (ya no quedan horas hoy)" : ""}. Prueba otra fecha u otro doctor.</span>`;
+      nota.innerHTML = `${KD.icon("alerta", 16)} <span>No quedan unidades libres para una cita de ${dur} minutos el ${KD.esc(KD.fmtFecha(fe, { weekday: "long", day: "numeric", month: "long" }))}${fe === KD.hoy() ? " (ya no quedan horas hoy)" : ""}. Prueba otra fecha.</span>`;
       nota.hidden = false;
       return pintarUnidades();
     }
-    const sel = opciones.some((o) => KD.aHora(o.t) === previo) ? previo : KD.aHora(opciones[0].t);
-    f.hora.innerHTML = opciones.map(({ t, libres }) => {
+    // De preferencia, la primera hora en que el doctor está libre
+    const sel = opciones.some((o) => KD.aHora(o.t) === previo) ? previo : KD.aHora((opciones.find((o) => !o.ocupado) || opciones[0]).t);
+    f.hora.innerHTML = opciones.map(({ t, libres, ocupado }) => {
       const h = KD.aHora(t);
       const txt = new Date(2000, 0, 1, Math.floor(t / 60), t % 60).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" });
-      return `<option value="${h}" ${h === sel ? "selected" : ""}>${txt} · ${libres} ${libres === 1 ? "unidad libre" : "unidades libres"}</option>`;
+      return `<option value="${h}" ${h === sel ? "selected" : ""}>${txt} · ${libres} ${libres === 1 ? "unidad libre" : "unidades libres"}${ocupado ? " · doctor con otra cita" : ""}</option>`;
     }).join("");
     pintarUnidades();
   };
   // Solo las unidades desocupadas durante toda la cita
   const pintarUnidades = () => {
+    if (avisoAceptado) {   // cambió el horario o el doctor: hay que volver a avisar
+      avisoAceptado = "";
+      m.querySelector("[data-guardar]").innerHTML = textoGuardar;
+      m.querySelector("[data-aviso]").hidden = true;
+    }
     if (!f.hora.value) { f.unidad.innerHTML = `<option value="">Elige primero la hora</option>`; return actualizarPasos(); }
     const t = KD.aMinutos(f.hora.value), dur = Number(f.duracion.value) || 30;
     const libres = unidadesLibres(t, dur);
@@ -544,8 +565,17 @@ KD.formCita = (datos) => {
     const sinCambioHorario = original && v.fecha === original.fecha && v.hora === original.hora;
     if (!sinCambioHorario && enPasado(v.fecha, v.hora)) { f.hora.classList.add("invalido"); mostrar("No se pueden agendar citas en días u horas que ya pasaron. Elige otro horario."); return; }
     const prueba = { id: existente?.id, pacienteId: pac.id, doctorId: v.doctorId, sucursalId: v.sucursalId, unidad: Number(v.unidad), fecha: v.fecha, hora: v.hora, duracion: Number(v.duracion) || 30 };
-    const choque = choqueCita(prueba);
-    if (choque) { mostrar(`${choque} Elige otra hora u otra unidad.`); return; }
+    const choque = choqueUnidad(prueba);
+    if (choque) { mostrar(`${KD.esc(choque)} Elige otra hora u otra unidad.`); return; }
+    // Doctor con otra cita: el primer clic avisa cuál es; el segundo (con los mismos datos) agenda de todos modos
+    const avisoDoc = avisoDoctor(prueba);
+    const clave = [prueba.doctorId, prueba.fecha, prueba.hora, prueba.duracion].join("|");
+    if (avisoDoc && avisoAceptado !== clave) {
+      avisoAceptado = clave;
+      mostrar(`${KD.esc(avisoDoc)} Si de todos modos quieres agendarla, presiona otra vez el botón.`);
+      m.querySelector("[data-guardar]").innerHTML = `${KD.icon("check", 16)} ${existente ? "Guardar de todos modos" : "Agendar de todos modos"}`;
+      return;
+    }
     const cita = existente || { id: KD.uid("ci"), estado: "programada" };
     Object.assign(cita, { ...prueba, id: cita.id, tipoId: v.tipoId, notas: v.notas, tratamientoId, piezas });
     if (planId) cita.planId = planId; else delete cita.planId;

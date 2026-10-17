@@ -17,6 +17,7 @@ MENSAJES = {
     "cita_emp_unidad_1": "La unidad no pertenece a esa sucursal.",
     "cita_check": "La hora de fin debe ser posterior a la de inicio.",
     "cita_piezas_check": "Hay una pieza dental que no existe en la numeracion FDI.",
+    "cita_baja_con_motivo": "Para cancelar o eliminar una cita indica el motivo.",
     "paciente_empresa_expediente_key": "Ya existe un paciente con ese numero de expediente.",
     "tratamiento_empresa_nombre_key": "Ya existe un tratamiento con ese nombre.",
 }

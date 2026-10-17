@@ -44,9 +44,9 @@ Esta lista es un recordatorio; manda lo que digan los documentos. Para cada regl
 - No se agenda en el pasado: ni crear ni mover una cita a un día u hora que ya pasó. (`js/views/agenda*.js`, `js/data.js`, `backend/nucleo/api/`)
 - Citas solo a las **:00 y :30** (`AG_PASO`); arrastrar también acomoda a :00 o :30. Las duraciones sí pueden ser de 15, 45, 75 min…
 - Nunca dos citas en la misma **unidad** (sillón) a la vez (`choqueCita`; en la base, la restricción `cita_sin_empalme_unidad`).
-- Si el **doctor** ya tiene otra cita: se **avisa** diciendo cuál cita es, y **quien agenda decide**. No debe bloquear en silencio ni dejar pasar sin aviso.
+- Si el **doctor** ya tiene otra cita: se **avisa** diciendo cuál cita es (horario, tratamiento, paciente y unidad), y **quien agenda decide**, al crear y al mover. No debe bloquear ni dejar pasar sin aviso. (`avisoDoctor` en el prototipo; `confirmar_empalme` en la API.)
 - Sin el permiso `agenda_todas`, cada quien ve solo sus citas; el personal clínico ve solo su agenda.
-- Cancelar o eliminar una cita pide **motivo** y guarda quién y cuándo; la cita sale de la agenda y queda en el historial del paciente.
+- Cancelar o eliminar una cita pide **motivo** y guarda quién y cuándo; la cita sale de la agenda y queda en el historial del paciente. En la base ninguna cita se borra: queda con estado `cancelada` o `eliminada` (`cita_baja_con_motivo`, `cita_no_borrar`).
 
 **Datos clínicos**
 - **Recepción no edita datos clínicos** (permiso `clinico_editar`): ve la alerta de alergias, pero no captura ni modifica alergias, antecedentes, odontograma ni consultas.
@@ -79,6 +79,8 @@ Esta lista es un recordatorio; manda lo que digan los documentos. Para cada regl
 - 🟢 **Sin hallazgos** en esa área.
 
 Antes de marcar 🔴, confirma leyendo el código (no solo el diff). Si no estás seguro, márcalo 🟡 y explica qué falta para confirmarlo.
+
+**Pendientes conocidos.** Si el código todavía no cumple una regla, pero `docs/requisitos.md` o `CHANGELOG.md` dicen expresamente que se programará en una entrega futura (por ejemplo "se programa en las siguientes entregas" o "Para después"), y **el cambio que revisas no la empeora**, márcalo 🟡 con la etiqueta **"pendiente conocido"** y di dónde quedó anotado. Es 🔴 solo si el cambio rompe una regla que ya funcionaba o agrega algo nuevo que la contradice.
 
 ## Formato del reporte
 
